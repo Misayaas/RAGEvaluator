@@ -1,1 +1,1 @@
-## 提供RAG评估相关的RESTful API接口
+## 提供RAG评估相关的API接口

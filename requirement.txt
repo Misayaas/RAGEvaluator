@@ -4,6 +4,3 @@ celery
 redis
 psycopg2-binary
 ragas
-
-# 安装所有依赖包
-pip install -r requirements.txt
