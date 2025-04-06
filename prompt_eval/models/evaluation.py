@@ -1,7 +1,10 @@
+# prompts的评估记录
 from django.db import models
 from .template import PromptTemplate
 
+# prompt评估模型
 class PromptEvaluation(models.Model):
+    # 基本信息
     template = models.ForeignKey(PromptTemplate, on_delete=models.CASCADE, related_name='evaluations')
     prompt_text = models.TextField(verbose_name="实际使用的Prompt")
     response = models.TextField(verbose_name="模型响应")
@@ -19,14 +22,16 @@ class PromptEvaluation(models.Model):
     batch_id = models.CharField(max_length=50, verbose_name="批次ID")
     
     class Meta:
-        db_table = 'prompt_evaluation'
-        ordering = ['-created_at']
-        verbose_name = 'Prompt评估记录'
+        db_table = 'prompt_evaluation' # 数据库表名
+        ordering = ['-created_at'] # 排序方式
+        verbose_name = 'Prompt评估记录' 
         verbose_name_plural = verbose_name
 
     def __str__(self):
         return f"Evaluation-{self.id}-{self.created_at.strftime('%Y%m%d')}"
 
+
+# 存储评估指标的模型
 class EvaluationMetric(models.Model):
     evaluation = models.ForeignKey(PromptEvaluation, on_delete=models.CASCADE, related_name='detailed_metrics')
     metric_name = models.CharField(max_length=100, verbose_name="指标名称")
