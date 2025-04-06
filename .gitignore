@@ -1,2 +1,5 @@
 rag/
 .idea/
+eval_master/__pycache__
+prompt_eval/__pycache__
+prompt_eval/models/__pycache__
