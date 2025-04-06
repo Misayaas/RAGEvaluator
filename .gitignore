@@ -3,3 +3,6 @@ rag/
 eval_master/__pycache__
 prompt_eval/__pycache__
 prompt_eval/models/__pycache__
+prompt_eval/migrations/__pycache__
+prompt_eval/services/__pycache__
+db.sqlite3
