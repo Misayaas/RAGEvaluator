@@ -47,7 +47,7 @@ class PromptTemplate(models.Model):
     def __str__(self):
         return f"{self.name}-v{self.version}"
     
-    # 创建新版本
+    # 创建新版本123
     def create_new_version(self):
         """创建新版本的模板"""
         current_version = float(self.version)
