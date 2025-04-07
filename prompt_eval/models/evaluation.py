@@ -17,7 +17,7 @@ class PromptEvaluation(models.Model):
     relevance_score = models.FloatField(verbose_name="相关性", default=0.0)
     coherence_score = models.FloatField(verbose_name="连贯性", default=0.0)
     response_time = models.FloatField(verbose_name="响应时间(ms)", default=0.0)
-    token_count = models.IntegerField(verbose_name="Token数量", default=0)
+    # token_count = models.IntegerField(verbose_name="Token数量", default=0)
     
     # 元数据
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
