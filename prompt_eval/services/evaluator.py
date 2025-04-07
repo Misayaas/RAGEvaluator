@@ -1,3 +1,4 @@
+from ragas.metrics import faithfulness
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
 from ..models.template import PromptTemplate
 from ragas import evaluate
@@ -29,8 +30,9 @@ class PromptEvaluator:
         metrics = self._calculate_metrics(prompt_text, response, context)
         
         # 更新评估记录
-        evaluation.relevance_score = metrics['relevance']
-        evaluation.coherence_score = metrics['coherence']
+        evaluation.faithfulness_score = metrics['faithfulness']
+        evaluation.answer_relevancy_score = metrics['answer_relevancy']
+        evaluation.context_relevancy_score = metrics['context_relevancy']
         evaluation.save()
         
         # 保存详细指标
@@ -55,23 +57,27 @@ class PromptEvaluator:
             result = evaluate(
                 eval_dataset,
                 metrics=[
-                    "faithfulness",     # 答案是否忠实于上下文
-                    "context_relevancy",  # 上下文相关性
-                    "answer_relevancy"    # 答案与问题的相关性
+                    faithfulness(),
+                    answer_relevancy(),
+                    context_relevancy()
                 ]
             )
             
             # 提取评估指标
             metrics = {
-                'relevance': float(result['answer_relevancy']),
-                'coherence': float(result['faithfulness']),
-                'context_relevance': float(result['context_relevancy'])
+                'faithfulness': float(result['faithfulness']),
+                'answer_relevancy': float(result['answer_relevancy']),
+                'context_relevancy': float(result['context_relevancy'])
             }
             
             return metrics
         except Exception as e:
-            print(f"评估过程中发生错误: {e}")
-            return {}
+            print(f"评估过程出现错误: {str(e)}")
+            return {
+                'faithfulness': 0.0,
+                'answer_relevancy': 0.0,
+                'context_relevancy': 0.0
+            }
         
 
     def _save_detailed_metrics(self, evaluation, metrics):
