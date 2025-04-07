@@ -1,14 +1,19 @@
-from ragas.metrics import faithfulness
+from langchain.evaluation import load_evaluator, EvaluatorType
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
 from ..models.template import PromptTemplate
-from ragas import evaluate
-from datasets import Dataset
 import time
 import uuid
 
 class PromptEvaluator:
     def __init__(self):
         self.batch_id = str(uuid.uuid4())
+        # 初始化各个评估器
+        self.criteria_evaluator = load_evaluator(EvaluatorType.CRITERIA)
+        self.qa_evaluator = load_evaluator(EvaluatorType.QA)
+        self.helpfulness_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="helpfulness")
+        self.correctness_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="correctness")
+        self.relevance_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="relevance")
+        self.coherence_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="coherence")
 
     def evaluate_prompt(self, template_id, prompt_text, response, context, model_name):
         start_time = time.time()
@@ -30,9 +35,12 @@ class PromptEvaluator:
         metrics = self._calculate_metrics(prompt_text, response, context)
         
         # 更新评估记录
-        evaluation.faithfulness_score = metrics['faithfulness']
-        evaluation.answer_relevancy_score = metrics['answer_relevancy']
-        evaluation.context_relevancy_score = metrics['context_relevancy']
+        evaluation.criteria_score = metrics['criteria']
+        evaluation.qa_relevance_score = metrics['qa_relevance']
+        evaluation.helpfulness_score = metrics['helpfulness']
+        evaluation.correctness_score = metrics['correctness']
+        evaluation.relevance_score = metrics['relevance']
+        evaluation.coherence_score = metrics['coherence']
         evaluation.save()
         
         # 保存详细指标
@@ -42,41 +50,27 @@ class PromptEvaluator:
 
     # 评估指标计算逻辑
     def _calculate_metrics(self, prompt, response, context):
-        # 构建评估数据集
-        eval_dataset = Dataset.from_dict({
-            "question": [prompt],
-            "answer": [response],
-            "contexts": [[context]],
-            # 标准答案难以确定，暂时只使用不需要ground_truths的指标
-            # "ground_truths": [[""]] 
-        })
-        
-        # 使用ragas进行评估
         try:
-            # 执行评估并获取结果
-            result = evaluate(
-                eval_dataset,
-                metrics=[
-                    faithfulness(),
-                    answer_relevancy(),
-                    context_relevancy()
-                ]
-            )
-            
-            # 提取评估指标
+            # 使用各个评估器进行评估
             metrics = {
-                'faithfulness': float(result['faithfulness']),
-                'answer_relevancy': float(result['answer_relevancy']),
-                'context_relevancy': float(result['context_relevancy'])
+                'criteria': float(self.criteria_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
+                'qa_relevance': float(self.qa_evaluator.evaluate_strings(prediction=response,input=prompt,reference=context)['score']),
+                'helpfulness': float(self.helpfulness_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
+                'correctness': float(self.correctness_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
+                'relevance': float(self.relevance_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
+                'coherence': float(self.coherence_evaluator.evaluate_strings(prediction=response,input=prompt)['score'])
             }
-            
             return metrics
+            
         except Exception as e:
             print(f"评估过程出现错误: {str(e)}")
             return {
-                'faithfulness': 0.0,
-                'answer_relevancy': 0.0,
-                'context_relevancy': 0.0
+                'criteria': 0.0,
+                'qa_relevance': 0.0,
+                'helpfulness': 0.0,
+                'correctness': 0.0,
+                'relevance': 0.0,
+                'coherence': 0.0
             }
         
 

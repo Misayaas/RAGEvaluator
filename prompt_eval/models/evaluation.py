@@ -10,9 +10,12 @@ class PromptEvaluation(models.Model):
     response = models.TextField(verbose_name="模型响应")
     context = models.TextField(verbose_name="上下文信息")
     
-    faithfulness_score = models.FloatField(verbose_name="忠实度得分", default=0.0)
-    answer_relevancy_score = models.FloatField(verbose_name="答案相关性得分", default=0.0)
-    context_relevancy_score = models.FloatField(verbose_name="上下文相关性得分", default=0.0)
+    criteria_score = models.FloatField(verbose_name="标准评分", default=0.0)
+    qa_relevance_score = models.FloatField(verbose_name="问答相关性", default=0.0)
+    helpfulness_score = models.FloatField(verbose_name="帮助程度", default=0.0)
+    correctness_score = models.FloatField(verbose_name="正确性", default=0.0)
+    relevance_score = models.FloatField(verbose_name="相关性", default=0.0)
+    coherence_score = models.FloatField(verbose_name="连贯性", default=0.0)
     response_time = models.FloatField(verbose_name="响应时间(ms)", default=0.0)
     token_count = models.IntegerField(verbose_name="Token数量", default=0)
     
