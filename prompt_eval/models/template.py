@@ -38,8 +38,8 @@ class PromptTemplate(models.Model):
     avg_score = models.FloatField(default=0.0, verbose_name="平均评分")
     
     class Meta:
-        db_table = 'prompt_template'
-        ordering = ['-created_at']
+        db_table = 'prompt_template' # 数据库表名
+        ordering = ['-created_at'] # 排序方式
         verbose_name = 'Prompt模板'
         verbose_name_plural = verbose_name
         unique_together = ('name', 'version')
