@@ -3,10 +3,10 @@ from django.db import models
 from .template import PromptTemplate
 
 # rag评估模型
-class Evaluation(models.Model):
+class RAGEvaluation(models.Model):
     # 基本信息
     name = models.TextField(verbose_name="评估任务名称")
-    detail = models.TextField(verbose_name="任务信息")
+    description = models.TextField(verbose_name="任务描述")
     
     # 评估指标
     evaluated_file = models.TextField(verbose_name="被评估的数据文件")
