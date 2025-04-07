@@ -6,12 +6,22 @@ class RAGEvaluation(models.Model):
     # 基本信息
     name = models.TextField(verbose_name="评估任务名称")
     description = models.TextField(verbose_name="任务描述")
+    query = models.TextField(verbose_name="查询内容")
+    retrieved_docs = models.TextField(verbose_name="检索到的文档")
+    generated_answer = models.TextField(verbose_name="生成的答案")
     
     # 评估指标
-    evaluated_file = models.TextField(verbose_name="被评估的数据文件")
+    faithfulness_score = models.FloatField(verbose_name="答案忠实度", default=0.0)
+    answer_relevancy_score = models.FloatField(verbose_name="答案相关性", default=0.0)
+    context_relevancy_score = models.FloatField(verbose_name="上下文相关性", default=0.0)
+    context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
+    context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
+    response_time = models.FloatField(verbose_name="响应时间(ms)", default=0.0)
     
     # 元数据
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    # evaluated_file = models.TextField(verbose_name="被评估的数据文件")
+    batch_id = models.CharField(max_length=50, verbose_name="批次ID")
     
     class Meta:
         db_table = 'rag_evaluation' # 数据库表名
