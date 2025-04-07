@@ -1,6 +1,5 @@
 # rag的评估记录
 from django.db import models
-from .template import PromptTemplate
 
 # rag评估模型
 class RAGEvaluation(models.Model):
@@ -26,7 +25,7 @@ class RAGEvaluation(models.Model):
 
 # 存储评估指标的模型
 class EvaluationResult(models.Model):
-    evaluation = models.ForeignKey(Evaluation, on_delete=models.CASCADE, related_name='detailed_metrics')
+    evaluation = models.ForeignKey(RAGEvaluation, on_delete=models.CASCADE, related_name='detailed_metrics')
     metric_name = models.CharField(max_length=100, verbose_name="指标名称")
     metric_value = models.FloatField(verbose_name="指标值")
     metric_details = models.JSONField(verbose_name="详细信息", null=True, blank=True)

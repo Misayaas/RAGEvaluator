@@ -38,7 +38,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "prompt_eval"
+    "prompt_eval",
+    "rag_eval"
 ]
 
 MIDDLEWARE = [

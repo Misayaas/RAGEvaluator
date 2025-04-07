@@ -6,3 +6,6 @@ prompt_eval/models/__pycache__
 prompt_eval/migrations/__pycache__
 prompt_eval/services/__pycache__
 db.sqlite3
+rag_eval/__pycache__
+rag_eval/migrations/__pycache__
+rag_eval/models/__pycache__
