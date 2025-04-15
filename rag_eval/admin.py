@@ -5,7 +5,7 @@ from .models.evaluation import RAGEvaluation, EvaluationResult
 
 @admin.register(RAGEvaluation)
 class RAGEvaluationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'evaluated_file', 'created_at')
+    list_display = ('name', 'description', 'created_at')
     list_filter = ('name', 'created_at')
     search_fields = ('name', 'created_at')
 
