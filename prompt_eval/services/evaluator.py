@@ -94,9 +94,11 @@ class PromptEvaluator:
         try:
             # 使用 Ragas 评估
             scores = evaluate(
-                questions=[prompt],
-                answers=[response] if response else [],
-                contexts=[[context]] if context else [],
+                dataset={
+                    "question": [prompt],
+                    "answer": [response] if response else [],
+                    "context": [[context]] if context else [],
+                },
                 metrics=self.metrics
             )
             

@@ -10,11 +10,30 @@ class PromptTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(PromptEvaluation)
 class PromptEvaluationAdmin(admin.ModelAdmin):
-    list_display = ('template', 'model_name', 'relevance_score', 'coherence_score', 'created_at')
-    list_filter = ('model_name', 'created_at')
-    search_fields = ('prompt_text', 'response')
+    list_display = (
+        'id', 
+        'prompt_text', 
+        'model_name',
+        'status',
+        'faithfulness_score',
+        'context_recall_score',
+        'answer_relevancy_score',
+        'context_precision_score',
+        'created_at'
+    )
+    list_filter = ('model_name', 'status', 'created_at')
+    search_fields = ('prompt_text', 'response', 'context')
+    readonly_fields = (
+        'faithfulness_score',
+        'context_recall_score',
+        'answer_relevancy_score',
+        'context_precision_score',
+        'version',
+        'parent'
+    )
 
 @admin.register(EvaluationMetric)
 class EvaluationMetricAdmin(admin.ModelAdmin):
     list_display = ('evaluation', 'metric_name', 'metric_value')
-    list_filter = ('metric_name',)
+    list_filter = ('metric_name', 'evaluation')
+    search_fields = ('metric_name',)
