@@ -1,80 +1,117 @@
-from langchain.evaluation import load_evaluator, EvaluatorType
+from ragas import evaluate
+from ragas.metrics import faithfulness, context_recall, answer_relevancy, context_precision
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
-from ..models.template import PromptTemplate
+from django.core.exceptions import ValidationError
 import time
-import uuid
 
 class PromptEvaluator:
     def __init__(self):
-        self.batch_id = str(uuid.uuid4())
-        # 初始化各个评估器
-        self.criteria_evaluator = load_evaluator(EvaluatorType.CRITERIA)
-        self.qa_evaluator = load_evaluator(EvaluatorType.QA)
-        self.helpfulness_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="helpfulness")
-        self.correctness_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="correctness")
-        self.relevance_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="relevance")
-        self.coherence_evaluator = load_evaluator(EvaluatorType.LABELED_CRITERIA, criteria="coherence")
+        self.metrics = [
+            faithfulness,
+            context_recall,
+            answer_relevancy,
+            context_precision
+        ]
 
-    def evaluate_prompt(self, template_id, prompt_text, response, context, model_name):
-        start_time = time.time()
-        
-        template = PromptTemplate.objects.get(id=template_id)
-        
-        # 创建评估记录
-        evaluation = PromptEvaluation.objects.create(
-            template=template,
+    def create_evaluation(self, prompt_text, context=None, model_name="default"):
+        """创建新的评估任务"""
+        return PromptEvaluation.objects.create(
             prompt_text=prompt_text,
-            response=response,
             context=context,
             model_name=model_name,
-            batch_id=self.batch_id,
-            response_time=(time.time() - start_time) * 1000
+            status='pending'
         )
-        
-        # 计算评估指标
-        metrics = self._calculate_metrics(prompt_text, response, context)
-        
-        # 更新评估记录
-        evaluation.criteria_score = metrics['criteria']
-        evaluation.qa_relevance_score = metrics['qa_relevance']
-        evaluation.helpfulness_score = metrics['helpfulness']
-        evaluation.correctness_score = metrics['correctness']
-        evaluation.relevance_score = metrics['relevance']
-        evaluation.coherence_score = metrics['coherence']
-        evaluation.save()
-        
-        # 保存详细指标
-        self._save_detailed_metrics(evaluation, metrics)
-        
-        return evaluation
 
-    # 评估指标计算逻辑
-    def _calculate_metrics(self, prompt, response, context):
+    def update_response(self, evaluation_id, response_text):
+        """更新模型响应并开始评估"""
         try:
-            # 使用各个评估器进行评估
-            metrics = {
-                'criteria': float(self.criteria_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
-                'qa_relevance': float(self.qa_evaluator.evaluate_strings(prediction=response,input=prompt,reference=context)['score']),
-                'helpfulness': float(self.helpfulness_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
-                'correctness': float(self.correctness_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
-                'relevance': float(self.relevance_evaluator.evaluate_strings(prediction=response,input=prompt)['score']),
-                'coherence': float(self.coherence_evaluator.evaluate_strings(prediction=response,input=prompt)['score'])
-            }
-            return metrics
+            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
+            evaluation.update_response(response_text)
+            return self.evaluate_prompt(evaluation)
+        except PromptEvaluation.DoesNotExist:
+            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
+
+    def evaluate_prompt(self, evaluation):
+        """评估一个prompt"""
+        if evaluation.status != 'responded':
+            raise ValidationError("只能评估已有响应的记录")
+
+        try:
+            evaluation.status = 'evaluating'
+            evaluation.save()
+            
+            # 计算评估指标
+            metrics = self._calculate_metrics(
+                evaluation.prompt_text,
+                evaluation.response,
+                evaluation.context
+            )
+            
+            # 更新评估记录
+            evaluation.faithfulness_score = metrics.get('faithfulness', 0.0)
+            evaluation.context_recall_score = metrics.get('context_recall', 0.0)
+            evaluation.answer_relevancy_score = metrics.get('answer_relevancy', 0.0)
+            evaluation.context_precision_score = metrics.get('context_precision', 0.0)
+            evaluation.status = 'completed'
+            evaluation.save()
+            
+            # 保存详细指标
+            self._save_detailed_metrics(evaluation, metrics)
+            
+            return evaluation
             
         except Exception as e:
-            print(f"评估过程出现错误: {str(e)}")
+            evaluation.status = 'failed'
+            evaluation.save()
+            raise ValidationError(f"评估过程出现错误: {str(e)}")
+
+    def create_next_version(self, evaluation_id, new_prompt_text):
+        """创建新版本的评估"""
+        try:
+            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
+            return evaluation.create_next_version(new_prompt_text)
+        except PromptEvaluation.DoesNotExist:
+            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
+
+    def get_evaluation_history(self, evaluation_id):
+        """获取评估历史记录"""
+        try:
+            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
+            history = []
+            
+            # 获取所有前代版本
+            current = evaluation
+            while current.parent:
+                history.append(current.parent)
+                current = current.parent
+                
+            return history
+        except PromptEvaluation.DoesNotExist:
+            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
+
+    def _calculate_metrics(self, prompt, response, context):
+        """计算各项评估指标"""
+        try:
+            # 使用 Ragas 评估
+            scores = evaluate(
+                questions=[prompt],
+                answers=[response] if response else [],
+                contexts=[[context]] if context else [],
+                metrics=self.metrics
+            )
+            
             return {
-                'criteria': 0.0,
-                'qa_relevance': 0.0,
-                'helpfulness': 0.0,
-                'correctness': 0.0,
-                'relevance': 0.0,
-                'coherence': 0.0
+                'faithfulness': float(scores['faithfulness']),
+                'context_recall': float(scores['context_recall']),
+                'answer_relevancy': float(scores['answer_relevancy']),
+                'context_precision': float(scores['context_precision'])
             }
-        
+            
+        except Exception as e:
+            raise ValidationError(f"指标计算错误: {str(e)}")
 
     def _save_detailed_metrics(self, evaluation, metrics):
+        """保存详细评估指标"""
         for name, value in metrics.items():
             EvaluationMetric.objects.create(
                 evaluation=evaluation,
