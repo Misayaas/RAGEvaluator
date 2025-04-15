@@ -12,3 +12,4 @@ rag_eval/models/__pycache__
 evaluated/2025/04/15
 prompt_eval/migrations
 rag_eval/migrations
+rag_eval/services/__pycache__
