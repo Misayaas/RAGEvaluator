@@ -12,10 +12,10 @@ class RAGEvaluationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RAGEvaluation
-        fields = ['id', 'name', 'description', 'query', 'retrieved_docs', 'generated_answer',
+        fields = ['id', 'name', 'description', 'evaluated_file',
                   'faithfulness_score', 'answer_relevancy_score', 'context_relevancy_score',
                   'context_precision_score', 'context_recall_score', 'response_time',
-                  'created_at', 'batch_id', 'detailed_metrics']
-        read_only_fields = ['id', 'faithfulness_score', 'answer_relevancy_score',
+                  'created_at', 'detailed_metrics']
+        read_only_fields = ['id', 'evaluated_file', 'faithfulness_score', 'answer_relevancy_score',
                             'context_relevancy_score', 'context_precision_score',
                             'context_recall_score', 'response_time', 'created_at', 'detailed_metrics']

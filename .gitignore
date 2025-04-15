@@ -9,3 +9,6 @@ db.sqlite3
 rag_eval/__pycache__
 rag_eval/migrations/__pycache__
 rag_eval/models/__pycache__
+evaluated/2025/04/15
+prompt_eval/migrations
+rag_eval/migrations

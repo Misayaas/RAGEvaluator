@@ -6,9 +6,6 @@ class RAGEvaluation(models.Model):
     # 基本信息
     name = models.TextField(verbose_name="评估任务名称")
     description = models.TextField(verbose_name="任务描述")
-    query = models.TextField(verbose_name="查询内容")
-    retrieved_docs = models.TextField(verbose_name="检索到的文档")
-    generated_answer = models.TextField(verbose_name="生成的答案")
     
     # 评估指标
     faithfulness_score = models.FloatField(verbose_name="答案忠实度", default=0.0)
@@ -20,8 +17,7 @@ class RAGEvaluation(models.Model):
     
     # 元数据
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
-    # evaluated_file = models.TextField(verbose_name="被评估的数据文件")
-    batch_id = models.CharField(max_length=50, verbose_name="批次ID")
+    evaluated_file = models.FileField(upload_to='evaluated/%Y/%m/%d/')
     
     class Meta:
         db_table = 'rag_evaluation' # 数据库表名
