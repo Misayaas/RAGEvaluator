@@ -8,10 +8,10 @@ class PromptEvaluation(models.Model):
     context = models.TextField(verbose_name="上下文信息", null=True, blank=True)
     
     # Ragas 评估指标
-    faithfulness_score = models.FloatField(verbose_name="忠实度", default=0.0)
-    context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
+    # faithfulness_score = models.FloatField(verbose_name="忠实度", default=0.0)
+    # context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
     answer_relevancy_score = models.FloatField(verbose_name="答案相关性", default=0.0)
-    context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
+    # context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
     
     # 状态跟踪
     status = models.CharField(

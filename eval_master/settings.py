@@ -126,3 +126,15 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# 腾讯云
+HUNYUAN_SECRET_KEY = "sk-HAsrY3j2JXF9POeRsh78SZqDVa8kqQGegNIl6IVql38iv0qi"
+HUNYUAN_API_BASE = "https://api.hunyuan.cloud.tencent.com/v1"
+
+# openAI兼容配置
+OPENAI_API_KEY = HUNYUAN_SECRET_KEY
+OPENAI_API_BASE = HUNYUAN_API_BASE
+
+
+
+

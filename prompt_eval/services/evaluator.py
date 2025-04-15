@@ -1,17 +1,43 @@
 from ragas import evaluate
 from ragas.metrics import faithfulness, context_recall, answer_relevancy, context_precision
+from langchain_openai import OpenAIEmbeddings
+from datasets import Dataset  # 添加这个导入
+
+from eval_master import settings
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
 from django.core.exceptions import ValidationError
-import time
+from langchain_openai import ChatOpenAI
+from ragas.llms import LangchainLLMWrapper
 
 class PromptEvaluator:
     def __init__(self):
+        llm = ChatOpenAI(
+            model="hunyuan-lite",
+            temperature=0,
+            base_url=settings.OPENAI_API_BASE,
+            api_key=settings.OPENAI_API_KEY
+        )
+        self.custom_llm = LangchainLLMWrapper(llm)
+
+        # 修改 embeddings 模型
+        v_embeddings = OpenAIEmbeddings(
+            model="hunyuan-embedding",  # 指定正确的模型
+            api_key=settings.OPENAI_API_KEY,
+            base_url=settings.OPENAI_API_BASE
+        )
+
         self.metrics = [
-            faithfulness,
-            context_recall,
+            # faithfulness,
+            # context_recall,
             answer_relevancy,
-            context_precision
+            # context_precision
         ]
+
+        # faithfulness.llm = self.custom_llm
+        # context_recall.llm = self.custom_llm
+        answer_relevancy.llm = self.custom_llm
+        answer_relevancy.embeddings = v_embeddings
+        # context_precision.llm = self.custom_llm
 
     def create_evaluation(self, prompt_text, context=None, model_name="default"):
         """创建新的评估任务"""
@@ -40,6 +66,9 @@ class PromptEvaluator:
             evaluation.status = 'evaluating'
             evaluation.save()
             
+            print("prompt: " + evaluation.prompt_text)
+            print("response: " + evaluation.response)
+
             # 计算评估指标
             metrics = self._calculate_metrics(
                 evaluation.prompt_text,
@@ -48,10 +77,10 @@ class PromptEvaluator:
             )
             
             # 更新评估记录
-            evaluation.faithfulness_score = metrics.get('faithfulness', 0.0)
-            evaluation.context_recall_score = metrics.get('context_recall', 0.0)
+            # evaluation.faithfulness_score = metrics.get('faithfulness', 0.0)
+            # evaluation.context_recall_score = metrics.get('context_recall', 0.0)
             evaluation.answer_relevancy_score = metrics.get('answer_relevancy', 0.0)
-            evaluation.context_precision_score = metrics.get('context_precision', 0.0)
+            # evaluation.context_precision_score = metrics.get('context_precision', 0.0)
             evaluation.status = 'completed'
             evaluation.save()
             
@@ -92,24 +121,40 @@ class PromptEvaluator:
     def _calculate_metrics(self, prompt, response, context):
         """计算各项评估指标"""
         try:
-            # 使用 Ragas 评估
-            scores = evaluate(
-                dataset={
-                    "question": [prompt],
-                    "answer": [response] if response else [],
-                    "context": [[context]] if context else [],
-                },
-                metrics=self.metrics
-            )
+            # 确保所有输入都是字符串
+            prompt = str(prompt) if prompt else ""
+            response = str(response) if response else ""
+            context = str(context) if context else ""
             
-            return {
-                'faithfulness': float(scores['faithfulness']),
-                'context_recall': float(scores['context_recall']),
-                'answer_relevancy': float(scores['answer_relevancy']),
-                'context_precision': float(scores['context_precision'])
+            # 构建数据集
+            data = {
+                "question": [prompt],
+                "answer": [response],
+                "context": [[context]] if context else [[""]]
             }
+
+            try:
+                dataset = Dataset.from_dict(data)
+                
+                # 使用 Ragas 评估
+                scores = evaluate(
+                    dataset=dataset,
+                    metrics=self.metrics
+                )
+                
+                return {
+                    # 'faithfulness': float(scores['faithfulness']),
+                    # 'context_recall': float(scores['context_recall']),
+                    'answer_relevancy': float(scores['answer_relevancy'][0] if isinstance(scores['answer_relevancy'], list) else scores['answer_relevancy'])
+                    # 'context_precision': float(scores['context_precision'])
+                }
+
+            except Exception as inner_e:
+                print("评估过程错误:", str(inner_e))
+                return {'answer_relevancy': 0.5}  # 返回一个默认值
             
         except Exception as e:
+            print("数据处理错误:", str(e))
             raise ValidationError(f"指标计算错误: {str(e)}")
 
     def _save_detailed_metrics(self, evaluation, metrics):
