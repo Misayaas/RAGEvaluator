@@ -90,7 +90,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         if not evaluation.evaluated_file:
             return Response({'error': 'Evaluated file is missing'}, status=status.HTTP_400_BAD_REQUEST)
         
-        # 假设 evaluate_document 函数可以根据评估文件进行评估，返回评估结果
+        # 评估
         evaluation_result = evaluate_rag(evaluation.evaluated_file.path)
         
         # 填充 faithfulness_score 等数据

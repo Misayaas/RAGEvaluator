@@ -38,4 +38,3 @@ class EvaluationResult(models.Model):
     
     class Meta:
         db_table = 'rag_evaluation_result'
-        unique_together = ('evaluation', 'metric_name')# 存储RAG系统评估的结果和指标
