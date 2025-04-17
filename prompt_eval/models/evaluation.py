@@ -1,7 +1,12 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
+from prompt_eval.models import task
+
 class PromptEvaluation(models.Model):
+    # 添加任务关联
+    task = models.ForeignKey('PromptTask', on_delete=models.CASCADE, related_name='evaluations')
+
     # 基本信息
     prompt_text = models.TextField(verbose_name="实际使用的Prompt")
     response = models.TextField(verbose_name="模型响应", null=True, blank=True)
@@ -57,6 +62,7 @@ class PromptEvaluation(models.Model):
             raise ValidationError("只能基于已完成或失败的评估创建新版本")
         
         return PromptEvaluation.objects.create(
+            task=self.task,
             prompt_text=new_prompt_text,
             context=self.context,
             version=self.version + 1,

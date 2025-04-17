@@ -5,11 +5,13 @@ from datasets import Dataset  # 添加这个导入
 
 from eval_master import settings
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
+from ..models.task import PromptTask
 from django.core.exceptions import ValidationError
 from langchain_openai import ChatOpenAI
 from ragas.llms import LangchainLLMWrapper
 
 class PromptEvaluator:
+    """初始化"""
     def __init__(self):
         llm = ChatOpenAI(
             model="hunyuan-lite",
@@ -39,17 +41,66 @@ class PromptEvaluator:
         answer_relevancy.embeddings = v_embeddings
         # context_precision.llm = self.custom_llm
 
-    def create_evaluation(self, prompt_text, context=None, model_name="default"):
-        """创建新的评估任务"""
-        return PromptEvaluation.objects.create(
-            prompt_text=prompt_text,
-            context=context,
-            model_name=model_name,
-            status='pending'
+
+    """创建新的评估任务"""
+    def create_task(self, name, description=None, goal=None):
+        return PromptTask.objects.create(
+            name=name,
+            description=description,
+            goal=goal,
+            status='active'
         )
 
+    """为指定任务创建新的评估"""
+    def create_evaluation_for_task(self, task_id, prompt_text, context=None, model_name="default"):
+        try:
+            task = PromptTask.objects.get(id=task_id)
+
+            # 获取最新的评估记录
+            latest_evaluation = task.evaluations.order_by('-version').first()
+
+            return PromptEvaluation.objects.create(
+                task=task,
+                prompt_text=prompt_text,
+                context=context or (latest_evaluation.context if latest_evaluation else None),
+                model_name=model_name,
+                status='pending',
+                version=task.evaluations.count() + 1
+            )
+        except PromptTask.DoesNotExist:
+            raise ValidationError(f"未找到ID为{task_id}的任务")
+
+    """使用大模型进行评估并返回响应"""
+    def evaluate_with_llm(self, evaluation_id):
+        try:
+            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
+            
+            # 调用大模型获取响应
+            # TODO: 这里需要实现调用大模型的逻辑
+
+
+            # 更新响应并进行评估
+            response = "这是一个示例响应"
+            evaluation.update_response(response)
+            return self.evaluate_prompt(evaluation)
+            
+        except PromptEvaluation.DoesNotExist:
+            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
+        except Exception as e:
+            raise ValidationError(f"评估过程出错: {str(e)}")
+
+
+    """获取任务的所有评估记录"""
+    def get_task_evaluations(self, task_id):
+        try:
+            task = PromptTask.objects.get(id=task_id)
+            return task.evaluations.order_by('version').all()
+        except PromptTask.DoesNotExist:
+            raise ValidationError(f"未找到ID为{task_id}的任务")
+
+
+    """更新模型响应并开始评估"""
     def update_response(self, evaluation_id, response_text):
-        """更新模型响应并开始评估"""
         try:
             evaluation = PromptEvaluation.objects.get(id=evaluation_id)
             evaluation.update_response(response_text)
@@ -57,8 +108,9 @@ class PromptEvaluator:
         except PromptEvaluation.DoesNotExist:
             raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
 
+
+    """评估一个prompt"""
     def evaluate_prompt(self, evaluation):
-        """评估一个prompt"""
         if evaluation.status != 'responded':
             raise ValidationError("只能评估已有响应的记录")
 
@@ -86,7 +138,6 @@ class PromptEvaluator:
             
             # 保存详细指标
             self._save_detailed_metrics(evaluation, metrics)
-            
             return evaluation
             
         except Exception as e:
@@ -94,32 +145,9 @@ class PromptEvaluator:
             evaluation.save()
             raise ValidationError(f"评估过程出现错误: {str(e)}")
 
-    def create_next_version(self, evaluation_id, new_prompt_text):
-        """创建新版本的评估"""
-        try:
-            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
-            return evaluation.create_next_version(new_prompt_text)
-        except PromptEvaluation.DoesNotExist:
-            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
 
-    def get_evaluation_history(self, evaluation_id):
-        """获取评估历史记录"""
-        try:
-            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
-            history = []
-            
-            # 获取所有前代版本
-            current = evaluation
-            while current.parent:
-                history.append(current.parent)
-                current = current.parent
-                
-            return history
-        except PromptEvaluation.DoesNotExist:
-            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")
-
+    """计算各项评估指标"""
     def _calculate_metrics(self, prompt, response, context):
-        """计算各项评估指标"""
         try:
             # 确保所有输入都是字符串
             prompt = str(prompt) if prompt else ""
@@ -135,7 +163,6 @@ class PromptEvaluator:
 
             try:
                 dataset = Dataset.from_dict(data)
-                
                 # 使用 Ragas 评估
                 scores = evaluate(
                     dataset=dataset,
