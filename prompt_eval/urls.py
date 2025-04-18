@@ -1,9 +1,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import PromptTemplateViewSet, PromptEvaluationViewSet
+from .views import PromptEvaluationViewSet
 
 router = DefaultRouter()
-router.register(r'templates', PromptTemplateViewSet)
 router.register(r'evaluations', PromptEvaluationViewSet)
 
 urlpatterns = [

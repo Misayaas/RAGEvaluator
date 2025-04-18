@@ -13,10 +13,10 @@ class PromptEvaluation(models.Model):
     context = models.TextField(verbose_name="上下文信息", null=True, blank=True)
     
     # Ragas 评估指标
-    # faithfulness_score = models.FloatField(verbose_name="忠实度", default=0.0)
-    # context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
+    faithfulness_score = models.FloatField(verbose_name="忠实度", default=0.0)
+    context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
     answer_relevancy_score = models.FloatField(verbose_name="答案相关性", default=0.0)
-    # context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
+    context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
     
     # 状态跟踪
     status = models.CharField(
@@ -55,20 +55,6 @@ class PromptEvaluation(models.Model):
         self.status = 'responded'
         self.save()
         return self
-
-    def create_next_version(self, new_prompt_text):
-        """创建下一个版本的评估"""
-        if self.status not in ['completed', 'failed']:
-            raise ValidationError("只能基于已完成或失败的评估创建新版本")
-        
-        return PromptEvaluation.objects.create(
-            task=self.task,
-            prompt_text=new_prompt_text,
-            context=self.context,
-            version=self.version + 1,
-            parent=self,
-            model_name=self.model_name
-        )
 
 class EvaluationMetric(models.Model):
     evaluation = models.ForeignKey(PromptEvaluation, on_delete=models.CASCADE, related_name='detailed_metrics')
