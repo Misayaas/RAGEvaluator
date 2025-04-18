@@ -11,6 +11,7 @@ from ragas.llms import LangchainLLMWrapper
 import csv
 import numpy as np
 import time
+import math
 
 def read_csv_file(csv_file):
 
@@ -22,20 +23,25 @@ def read_csv_file(csv_file):
         ground_truths = []
         answers = []
         contexts = []
+        reference = []
 
         for row in csv_reader:
             questions.append(row.get('question', '')) 
             ground_truths.append([row.get('ground_truth', '')]) 
             answers.append(row.get('answer', '')) 
-            contexts.append([row.get('context', '')]) 
+            contexts.append([row.get('contexts', '')]) 
+            reference.append(row.get('reference', '')) 
             
         return {
             "question": questions,
             "answer": answers,
             "contexts": contexts,
-            "ground_truths": ground_truths
+            "ground_truths": ground_truths,
+            "reference": reference
         }
 
+def filterNAN(v: list):
+    return list(filter(lambda x: not isinstance(x, float) or not math.isnan(x), v))
 
 def evaluate_rag(file_path : str) :
     llm = ChatOpenAI(
@@ -53,8 +59,8 @@ def evaluate_rag(file_path : str) :
         base_url=settings.OPENAI_API_BASE
     )
 
-    # answer_relevancy.llm = custom_llm
-    # answer_relevancy.embeddings = v_embeddings
+    answer_relevancy.llm = custom_llm
+    answer_relevancy.embeddings = v_embeddings
 
     faithfulness.llm = custom_llm
     context_recall.llm = custom_llm
@@ -65,11 +71,11 @@ def evaluate_rag(file_path : str) :
     result = evaluate(
     dataset = dataset, 
     metrics=[
-        # context_precision,
-        # context_recall,
+        context_precision,
+        context_recall,
         faithfulness,
         # answer_relevancy,
     ],
     )
 
-    return {"faithfulness_score": np.mean(result['faithfulness'])}
+    return {"faithfulness_score": np.mean(filterNAN(result['faithfulness']))}
