@@ -1,0 +1,2 @@
+HUNYUAN_SECRET_KEY = "sk-HAsrY3j2JXF9POeRsh78SZqDVa8kqQGegNIl6IVql38iv0qi"
+HUNYUAN_API_BASE = "https://api.hunyuan.cloud.tencent.com/v1"

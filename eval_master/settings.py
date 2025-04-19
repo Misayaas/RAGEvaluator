@@ -1,3 +1,9 @@
+from dotenv import load_dotenv
+import os
+
+# 加载.env文件
+load_dotenv()
+
 ## Django项目的核心配置文件
 """
 Django settings for eval_master project.
@@ -127,14 +133,9 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# 腾讯云
-HUNYUAN_SECRET_KEY = "sk-HAsrY3j2JXF9POeRsh78SZqDVa8kqQGegNIl6IVql38iv0qi"
-HUNYUAN_API_BASE = "https://api.hunyuan.cloud.tencent.com/v1"
-
 # openAI兼容配置
-OPENAI_API_KEY = HUNYUAN_SECRET_KEY
-OPENAI_API_BASE = HUNYUAN_API_BASE
-
+OPENAI_API_KEY = os.getenv("HUNYUAN_SECRET_KEY")
+OPENAI_API_BASE = os.getenv("HUNYUAN_API_BASE")
 
 
 

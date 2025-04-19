@@ -6,3 +6,7 @@ psycopg2-binary
 ragas
 langchain
 langchain-community 
+pytest
+pytest-django 
+coverage
+dotenv
