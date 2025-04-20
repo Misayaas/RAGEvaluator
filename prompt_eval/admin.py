@@ -19,7 +19,8 @@ class PromptEvaluationAdmin(admin.ModelAdmin):
         'context_recall_score',
         'answer_relevancy_score',
         'context_precision_score',
-        'created_at'
+        'created_at',
+        'updated_at'
     )
     list_filter = ('model_name', 'status', 'created_at')
     search_fields = ('prompt_text', 'response', 'context')
@@ -28,8 +29,7 @@ class PromptEvaluationAdmin(admin.ModelAdmin):
         'context_recall_score',
         'answer_relevancy_score',
         'context_precision_score',
-        'version',
-        'parent'
+        'version'
     )
 
 @admin.register(EvaluationMetric)

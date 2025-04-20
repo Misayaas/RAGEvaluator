@@ -33,7 +33,6 @@ class PromptEvaluation(models.Model):
     
     # 版本控制
     version = models.IntegerField(verbose_name="版本号", default=1)
-    parent = models.ForeignKey('self', null=True, blank=True, on_delete=models.SET_NULL, related_name='iterations')
     
     # 元数据
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
