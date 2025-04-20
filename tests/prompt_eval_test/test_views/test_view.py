@@ -1,10 +1,10 @@
-from unittest.mock import patch
-
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from rest_framework.test import APITestCase
 from prompt_eval.models.task import PromptTask
 from prompt_eval.models.evaluation import PromptEvaluation
+from langchain_core.runnables import Runnable
 
 @override_settings(
     OPENAI_API_KEY='test_key_123456',
@@ -20,9 +20,12 @@ class TestPromptEvaluationViewSet(APITestCase):
             prompt_text="测试prompt"
         )
 
-    @patch('prompt_eval.services.evaluator.OpenAIEmbeddings')
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def test_create_task(self, mock_chat, mock_embeddings):
+    def test_create_task(self, mock_chat):
+        # 创建模拟的 Runnable 对象
+        mock_llm = MagicMock(spec=Runnable)
+        mock_chat.return_value = mock_llm
+        
         url = reverse('evaluations-create-task')
         data = {
             'name': '新测试任务',
@@ -31,9 +34,12 @@ class TestPromptEvaluationViewSet(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('task_id', response.data)
 
-    @patch('prompt_eval.services.evaluator.OpenAIEmbeddings')
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def test_task_evaluations(self, mock_chat, mock_embeddings):
+    def test_task_evaluations(self, mock_chat):
+        # 创建模拟的 Runnable 对象
+        mock_llm = MagicMock(spec=Runnable)
+        mock_chat.return_value = mock_llm
+        
         url = reverse('evaluations-task-evaluations', kwargs={'pk': self.task.id}) 
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)

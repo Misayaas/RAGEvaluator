@@ -1,26 +1,26 @@
-from unittest.mock import patch
-
+from unittest.mock import patch, MagicMock
 from django.test import TestCase, override_settings
 from prompt_eval.services.evaluator import PromptEvaluator
 from prompt_eval.models.task import PromptTask
 from prompt_eval.models.evaluation import PromptEvaluation
+from langchain_core.runnables import Runnable
 
 @override_settings(
     OPENAI_API_KEY='test_key_123456',
     OPENAI_API_BASE='test_base_url'
 )
 class TestPromptEvaluator(TestCase):
-    @patch('prompt_eval.services.evaluator.OpenAIEmbeddings')
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def setUp(self, mock_chat, mock_embeddings):
+    def setUp(self, mock_chat):
+        mock_llm = MagicMock(spec=Runnable)
+        mock_chat.return_value = mock_llm
         self.evaluator = PromptEvaluator()
         self.task = PromptTask.objects.create(
             name="测试任务"
         )
 
-    @patch('prompt_eval.services.evaluator.OpenAIEmbeddings')
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def test_create_task(self, mock_chat, mock_embeddings):
+    def test_create_task(self, mock_chat):
         task = self.evaluator.create_task(name="新测试任务")
         self.assertEqual(task.name, "新测试任务")
 
@@ -33,9 +33,8 @@ class TestPromptEvaluator(TestCase):
     #     self.assertEqual(evaluation.task.id, self.task.id)
     #     self.assertEqual(evaluation.status, 'completed')
 
-    @patch('prompt_eval.services.evaluator.OpenAIEmbeddings')
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def test_get_task_evaluations(self, mock_chat, mock_embeddings):
+    def test_get_task_evaluations(self, mock_chat):
         evaluation1 = PromptEvaluation.objects.create(
             task=self.task,
             prompt_text="测试prompt1",
