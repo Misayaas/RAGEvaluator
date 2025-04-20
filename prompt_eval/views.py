@@ -25,7 +25,6 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         evaluation = evaluator.create_and_evaluate(
             task_id=request.data.get('task_id'),
             prompt_text=request.data.get('prompt_text'),
-            model_name=request.data.get('model_name', 'default')
         )
         return Response(self.get_serializer(evaluation).data)
 

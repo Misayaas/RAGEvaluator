@@ -1,7 +1,8 @@
 from ragas import evaluate
+from langchain_core.messages import HumanMessage
 from ragas.metrics import faithfulness, context_recall, answer_relevancy, context_precision
 from langchain_openai import OpenAIEmbeddings
-from datasets import Dataset  # 添加这个导入
+from datasets import Dataset  
 
 from eval_master import settings
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
@@ -19,6 +20,7 @@ class PromptEvaluator:
             base_url=settings.OPENAI_API_BASE,
             api_key=settings.OPENAI_API_KEY
         )
+        self.llm = llm
         self.custom_llm = LangchainLLMWrapper(llm)
 
         # 修改 embeddings 模型
@@ -49,7 +51,7 @@ class PromptEvaluator:
         )
 
     """创建新的评估并获取大模型响应"""
-    def create_and_evaluate(self, task_id, prompt_text, model_name="default"):
+    def create_and_evaluate(self, task_id, prompt_text):
         try:
             # 1. 创建评估记录
             task = PromptTask.objects.get(id=task_id)
@@ -65,15 +67,16 @@ class PromptEvaluator:
                 task=task,
                 prompt_text=prompt_text,
                 context=context,
-                model_name=model_name,
+                model_name=self.llm.model_name,
                 status='pending',
                 version=task.evaluations.count() + 1
             )
 
             # 2. 获取大模型响应
-            # TODO: 这里需要实现调用大模型的逻辑
-            response = "这是一个示例响应"
-            
+            message = HumanMessage(content=prompt_text)
+            ai_response = self.llm.invoke([message])
+            response = ai_response.content
+
             # 3. 更新响应并评估
             evaluation.update_response(response)
             return self.evaluate_prompt(evaluation)
