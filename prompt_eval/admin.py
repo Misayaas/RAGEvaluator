@@ -16,9 +16,9 @@ class PromptEvaluationAdmin(admin.ModelAdmin):
         'model_name',
         'status',
         'faithfulness_score',
-        'context_recall_score',
-        'answer_relevancy_score',
-        'context_precision_score',
+        'relevance_score',
+        'coherence_score',
+        'helpfulness_score',
         'created_at',
         'updated_at'
     )
@@ -26,9 +26,9 @@ class PromptEvaluationAdmin(admin.ModelAdmin):
     search_fields = ('prompt_text', 'response', 'context')
     readonly_fields = (
         'faithfulness_score',
-        'context_recall_score',
-        'answer_relevancy_score',
-        'context_precision_score',
+        'relevance_score',
+        'coherence_score',
+        'helpfulness_score',
         'version'
     )
 

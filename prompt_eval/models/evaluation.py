@@ -14,9 +14,11 @@ class PromptEvaluation(models.Model):
     
     # Ragas 评估指标
     faithfulness_score = models.FloatField(verbose_name="忠实度", default=0.0)
-    context_recall_score = models.FloatField(verbose_name="上下文召回率", default=0.0)
-    answer_relevancy_score = models.FloatField(verbose_name="答案相关性", default=0.0)
-    context_precision_score = models.FloatField(verbose_name="上下文精确度", default=0.0)
+    
+    # Langchain 评估指标
+    relevance_score = models.FloatField(verbose_name="相关性", default=0.0)
+    coherence_score = models.FloatField(verbose_name="连贯性", default=0.0)
+    helpfulness_score = models.FloatField(verbose_name="有用性", default=0.0)
     
     # 状态跟踪
     status = models.CharField(

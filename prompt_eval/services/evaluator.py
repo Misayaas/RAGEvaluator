@@ -1,8 +1,10 @@
+from langchain_core.prompts import PromptTemplate
 from ragas import evaluate
 from langchain_core.messages import HumanMessage
-from ragas.metrics import faithfulness, context_recall, answer_relevancy, context_precision
-from langchain_openai import OpenAIEmbeddings
+from ragas.metrics import faithfulness
 from datasets import Dataset  
+from langchain.evaluation import load_evaluator, EvaluatorType
+from langchain.evaluation.criteria import Criteria
 
 from eval_master import settings
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
@@ -16,32 +18,95 @@ class PromptEvaluator:
     def __init__(self):
         llm = ChatOpenAI(
             model="hunyuan-lite",
-            temperature=0,
+            temperature=0.6,
             base_url=settings.OPENAI_API_BASE,
             api_key=settings.OPENAI_API_KEY
         )
         self.llm = llm
         self.custom_llm = LangchainLLMWrapper(llm)
 
-        # 修改 embeddings 模型
-        v_embeddings = OpenAIEmbeddings(
-            model="hunyuan-embedding",  # 指定正确的模型
-            api_key=settings.OPENAI_API_KEY,
-            base_url=settings.OPENAI_API_BASE
-        )
-
         self.metrics = [
-            faithfulness,
-            # context_recall,
-            # answer_relevancy,
-            # context_precision
+            faithfulness
         ]
 
         faithfulness.llm = self.custom_llm
-        # context_recall.llm = self.custom_llm
-        # answer_relevancy.llm = self.custom_llm
-        # answer_relevancy.embeddings = v_embeddings
-        # context_precision.llm = self.custom_llm
+
+        # 自定义评估提示词
+        evaluation_prompts = {
+            "relevance": PromptTemplate(
+                input_variables=["input", "output", "criteria"],
+                template="""请评估回答与问题的相关性，评分范围为0到1。
+
+评估标准：{criteria}
+
+评分细则：
+1.0: 完全相关，准确回答问题的所有方面
+0.8: 大部分相关，回答了问题的主要方面
+0.6: 基本相关，但有一些不够准确或遗漏
+0.4: 部分相关，但存在明显偏差
+0.2: 略微相关，但大部分内容偏离主题
+0.0: 完全不相关
+
+输入问题：{input}
+模型回答：{output}
+
+"""),
+
+            "coherence": PromptTemplate(
+                input_variables=["input", "output", "criteria"],
+                template="""请评估回答的连贯性，评分范围为0到1。
+
+评估标准：{criteria}
+
+评分细则：
+1.0: 结构完整，逻辑严密，表达清晰流畅
+0.8: 整体连贯，偶有小瑕疵
+0.6: 基本连贯，但有些跳跃
+0.4: 部分内容混乱，逻辑不够清晰
+0.2: 大部分内容缺乏连贯性
+0.0: 完全混乱，难以理解
+
+输入问题：{input}
+模型回答：{output}
+
+请只输出一个0到1之间的数字作为评分，也就是score，不要包含任何其他文字。"""),
+
+            "helpfulness": PromptTemplate(
+                input_variables=["input", "output", "criteria"],
+                template="""请评估回答的帮助程度，评分范围为0到1。
+
+评估标准：{criteria}
+
+评分细则：
+1.0: 提供了完整、实用的解决方案
+0.8: 提供了有价值的信息和具体建议
+0.6: 提供了一般性的帮助
+0.4: 提供了有限的帮助
+0.2: 帮助很少，难以应用
+0.0: 完全没有帮助价值
+
+输入问题：{input}
+模型回答：{output}
+
+请只输出一个0到1之间的数字作为评分，也就是score，不要包含任何其他文字。"""),
+        }
+
+        # 使用自定义提示词初始化评估器
+        self.lc_evaluators = {}
+        for name, prompt in evaluation_prompts.items():
+            self.lc_evaluators[name] = load_evaluator(
+                EvaluatorType.CRITERIA,
+                criteria=getattr(Criteria, name.upper()),
+                llm=llm,
+                prompt=prompt
+            )
+
+        # # 添加 LangChain 评估器
+        # self.lc_evaluators = {
+        #     "relevance": load_evaluator(EvaluatorType.CRITERIA, criteria=Criteria.RELEVANCE, llm=llm),
+        #     "coherence": load_evaluator(EvaluatorType.CRITERIA, criteria=Criteria.COHERENCE, llm=llm),
+        #     "helpfulness": load_evaluator(EvaluatorType.CRITERIA, criteria=Criteria.HELPFULNESS, llm=llm)
+        # }
 
 
     """创建新的评估任务"""
@@ -105,18 +170,27 @@ class PromptEvaluator:
             evaluation.status = 'evaluating'
             evaluation.save()
 
-            # 计算评估指标
-            metrics = self._calculate_metrics(
+            # 计算 Ragas 评估指标
+            ragas_metrics = self._calculate_ragas_metrics(
                 evaluation.prompt_text,
                 evaluation.response,
                 evaluation.context
             )
+
+            # 计算 LangChain 评估指标
+            lc_metrics = self._calculate_langchain_metrics(
+                evaluation.prompt_text,
+                evaluation.response
+            )
+
+            # 合并所有指标
+            metrics = {**ragas_metrics, **lc_metrics}
             
             # 更新评估记录
             evaluation.faithfulness_score = metrics.get('faithfulness', 0.0)
-            evaluation.context_recall_score = metrics.get('context_recall', 0.0)
-            evaluation.answer_relevancy_score = metrics.get('answer_relevancy', 0.0)
-            evaluation.context_precision_score = metrics.get('context_precision', 0.0)
+            evaluation.relevance_score = metrics.get('relevance', 0.0)
+            evaluation.coherence_score = metrics.get('coherence', 0.0)
+            evaluation.helpfulness_score = metrics.get('helpfulness', 0.0)
             evaluation.status = 'completed'
             evaluation.save()
             
@@ -131,7 +205,7 @@ class PromptEvaluator:
 
 
     """计算各项评估指标"""
-    def _calculate_metrics(self, prompt, response, context):
+    def _calculate_ragas_metrics(self, prompt, response, context):
         try:
             # 确保所有输入都是字符串
             prompt = str(prompt) if prompt else ""
@@ -161,15 +235,36 @@ class PromptEvaluator:
             )
             
             return {
-                'faithfulness': float(scores['faithfulness'][0] if isinstance(scores['faithfulness'], list) else scores['faithfulness']),
-                # 'context_recall': float(scores['context_recall']),
-                # 'answer_relevancy': float(scores['answer_relevancy'][0] if isinstance(scores['answer_relevancy'], list) else scores['answer_relevancy'])
-                # 'context_precision': float(scores['context_precision'])
+                'faithfulness': float(scores['faithfulness'][0] if isinstance(scores['faithfulness'], list) else scores['faithfulness'])
             }
             
         except Exception as e:
             print("数据处理错误:", str(e))
             raise ValidationError(f"指标计算错误: {str(e)}")
+
+    def _calculate_langchain_metrics(self, prompt, response):
+        try:
+            metrics = {}
+            for name, evaluator in self.lc_evaluators.items():
+                result = evaluator.evaluate_strings(
+                    prediction=response,
+                    input=prompt
+                )
+                if isinstance(result, dict):
+                    if result.get('score') is not None:
+                        metrics[name] = float(result['score'])
+                    elif result.get('value') is not None:
+                        metrics[name] = float(result['value'])
+                    elif result.get('reasoning') is not None:
+                        metrics[name] = float(result['reasoning'])
+                    else:
+                        metrics[name] = 0.0
+                else:
+                    metrics[name] = float(result) if result is not None else 0.0
+            return metrics
+        except Exception as e:
+            print(f"LangChain 评估错误: {str(e)}")
+            return {}
 
     def _save_detailed_metrics(self, evaluation, metrics):
         """保存详细评估指标"""
