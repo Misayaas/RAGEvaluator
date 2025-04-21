@@ -3,6 +3,7 @@ rag/
 .env
 db.sqlite3
 **/__pycache__/
+open_db.bat
 
 eval_master/__pycache__
 evaluation_core/__pycache__

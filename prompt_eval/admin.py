@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models.evaluation import PromptEvaluation, EvaluationMetric
 from .models.template import PromptTemplate
+from .models.custom_metric import CustomMetric
 
 @admin.register(PromptTemplate)
 class PromptTemplateAdmin(admin.ModelAdmin):
@@ -37,3 +38,9 @@ class EvaluationMetricAdmin(admin.ModelAdmin):
     list_display = ('evaluation', 'metric_name', 'metric_value')
     list_filter = ('metric_name', 'evaluation')
     search_fields = ('metric_name',)
+
+@admin.register(CustomMetric)
+class CustomMetricAdmin(admin.ModelAdmin):
+    list_display = ('name', 'task', 'description', 'created_at')
+    list_filter = ('task', 'created_at')
+    search_fields = ('name', 'description')

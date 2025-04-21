@@ -10,6 +10,7 @@ from eval_master import settings
 from ..models.custom_metric import CustomMetric
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
 from ..models.task import PromptTask
+from .CustomRagasMetric import CustomRagasMetric
 from django.core.exceptions import ValidationError
 from langchain_openai import ChatOpenAI
 from ragas.llms import LangchainLLMWrapper
@@ -152,7 +153,7 @@ class PromptEvaluator:
 
 
     """创建新的评估并获取大模型响应"""
-    def create_and_evaluate(self, task_id, prompt_text):
+    def create_and_evaluate(self, task_id, prompt_text, selected_metrics=None):
         try:
             # 1. 创建评估记录
             task = PromptTask.objects.get(id=task_id)
@@ -180,31 +181,38 @@ class PromptEvaluator:
 
             # 3. 更新响应并评估
             evaluation.update_response(response)
-            return self.evaluate_prompt(evaluation)
+            return self.evaluate_prompt(evaluation, selected_metrics)
 
         except PromptTask.DoesNotExist:
             raise ValidationError(f"未找到ID为{task_id}的任务")
         except Exception as e:
             raise ValidationError(f"评估过程出错: {str(e)}")
 
-
-    """获取任务的所有评估记录"""
-    def get_task_evaluations(self, task_id):
-        try:
-            task = PromptTask.objects.get(id=task_id)
-            return task.evaluations.order_by('version').all()
-        except PromptTask.DoesNotExist:
-            raise ValidationError(f"未找到ID为{task_id}的任务")
-
-
-    """评估一个prompt"""
-    def evaluate_prompt(self, evaluation):
+    def evaluate_prompt(self, evaluation, selected_metrics=None):
         if evaluation.status != 'responded':
             raise ValidationError("只能评估已有响应的记录")
 
         try:
             evaluation.status = 'evaluating'
             evaluation.save()
+
+            # 加载选中的自定义指标
+            if selected_metrics:
+                task_metrics = CustomMetric.objects.filter(
+                    task=evaluation.task,
+                    id__in=selected_metrics
+                )
+            else:
+                task_metrics = []
+
+            # 添加选中的自定义指标到评估列表
+            for metric in task_metrics:
+                custom_metric = CustomRagasMetric(
+                    name=metric.name,
+                    description=metric.description,
+                    llm=self.custom_llm
+                )
+                self.metrics.append(custom_metric)
 
             # 计算 Ragas 评估指标
             ragas_metrics = self._calculate_ragas_metrics(
@@ -312,9 +320,17 @@ class PromptEvaluator:
             )
 
     """删除评估任务"""
-    def  delete_task(self, task_id):
+    def delete_task(self, task_id):
         try:
             task = PromptTask.objects.get(id=task_id)
+
+            for evaluation in task.evaluations.all():
+                evaluation.detailed_metrics.all().delete()
+
+            task.evaluations.all().delete()
+
+            task.custom_metrics.all().delete()
+            
             task.delete()
             return True
         except PromptTask.DoesNotExist:

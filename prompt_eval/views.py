@@ -4,6 +4,13 @@ from rest_framework.response import Response
 from .models.evaluation import PromptEvaluation
 from .serializers import PromptEvaluationSerializer
 from .services.evaluator import PromptEvaluator
+from django.core.exceptions import ValidationError
+
+from .serializers import (
+    PromptEvaluationSerializer, 
+    CustomMetricSerializer,
+    EvaluationMetricSerializer
+)
 
 class PromptEvaluationViewSet(viewsets.ModelViewSet):
     queryset = PromptEvaluation.objects.all()
@@ -25,6 +32,7 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         evaluation = evaluator.create_and_evaluate(
             task_id=request.data.get('task_id'),
             prompt_text=request.data.get('prompt_text'),
+            selected_metrics=request.data.get('selected_metrics', [])  # 添加选中的指标ID列表
         )
         return Response(self.get_serializer(evaluation).data)
 

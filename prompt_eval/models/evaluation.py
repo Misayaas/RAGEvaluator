@@ -1,7 +1,4 @@
 from django.db import models
-from django.core.exceptions import ValidationError
-
-from prompt_eval.models import task
 
 class PromptEvaluation(models.Model):
     # 添加任务关联
