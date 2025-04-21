@@ -35,7 +35,7 @@ class TestPromptEvaluationViewSet(APITestCase):
         self.assertIn('task_id', response.data)
 
     @patch('prompt_eval.services.evaluator.ChatOpenAI')
-    def test_task_evaluations(self, mock_chat):
+    def test_task_evaluations(self, mock_chat ):
         # 创建模拟的 Runnable 对象
         mock_llm = MagicMock(spec=Runnable)
         mock_chat.return_value = mock_llm

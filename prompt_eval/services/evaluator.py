@@ -319,6 +319,17 @@ class PromptEvaluator:
                 metric_value=value
             )
 
+
+    """获取任务的所有评估记录"""
+    def get_task_evaluations(self, task_id):
+        try:
+            task = PromptTask.objects.get(id=task_id)
+            return task.evaluations.all().order_by('-created_at')
+        except PromptTask.DoesNotExist:
+            raise ValidationError(f"未找到ID为{task_id}的任务")
+        except Exception as e:
+            raise ValidationError(f"获取评估记录失败: {str(e)}")
+
     """删除评估任务"""
     def delete_task(self, task_id):
         try:
@@ -330,7 +341,7 @@ class PromptEvaluator:
             task.evaluations.all().delete()
 
             task.custom_metrics.all().delete()
-            
+
             task.delete()
             return True
         except PromptTask.DoesNotExist:
