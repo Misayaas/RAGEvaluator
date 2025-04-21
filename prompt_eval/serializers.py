@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from .models.evaluation import PromptEvaluation, EvaluationMetric
 from .models.template import PromptTemplate
-from .models.custom_metric import CustomMetric
+from .models.custom_metric import CustomMetric, MetricScore
+
 
 class PromptTemplateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -18,13 +19,29 @@ class CustomMetricSerializer(serializers.ModelSerializer):
         model = CustomMetric
         fields = ['id', 'name', 'description', 'created_at']
 
+
+class MetricScoreSerializer(serializers.ModelSerializer):
+    metric_name = serializers.CharField(source='metric.name', read_only=True)
+
+    class Meta:
+        model = MetricScore
+        fields = ['metric_name', 'score', 'created_at']
+
 class PromptEvaluationSerializer(serializers.ModelSerializer):
     detailed_metrics = EvaluationMetricSerializer(many=True, read_only=True)
-    custom_metrics = serializers.SerializerMethodField()
+    metric_scores = MetricScoreSerializer(many=True, read_only=True)
     
     class Meta:
         model = PromptEvaluation
-        fields = '__all__'
+        fields = [
+            'id', 'task', 'prompt_text', 'response', 'context',
+            'model_name', 'status', 'version', 'created_at',
+            'faithfulness_score', 'relevance_score',
+            'coherence_score', 'helpfulness_score',
+            'detailed_metrics' ,
+            'metric_scores'
+        ]
+        custom_metrics = serializers.SerializerMethodField()
 
     def get_custom_metrics(self, obj):
         return obj.get_custom_metric_scores()

@@ -81,9 +81,8 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
     def delete_custom_metric(self, request, pk=None):
         """删除自定义指标"""
         try:
-            metric_id = request.data.get('metric_id')
             evaluator = PromptEvaluator()
-            evaluator.delete_custom_metric(metric_id)
+            evaluator.delete_custom_metric(pk)
             return Response({'message': '删除成功'})
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
