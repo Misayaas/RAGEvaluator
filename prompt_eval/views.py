@@ -42,4 +42,42 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         evaluator.delete_task(task_id=pk)
         return Response({'message': '任务删除成功'})
 
+    @action(detail=True, methods=['post'])
+    def create_custom_metric(self, request, pk=None):
+        """创建自定义指标"""
+        try:
+            name = request.data.get('name')
+            description = request.data.get('description')
+            
+            evaluator = PromptEvaluator()
+            metric = evaluator.create_custom_metric(pk, name, description)
+            
+            serializer = CustomMetricSerializer(metric)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=['get'])
+    def custom_metrics(self, request, pk=None):
+        """获取任务的所有自定义指标"""
+        try:
+            evaluator = PromptEvaluator()
+            metrics = evaluator.get_task_custom_metrics(pk)
+            
+            serializer = CustomMetricSerializer(metrics, many=True)
+            return Response(serializer.data)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=['delete'])
+    def delete_custom_metric(self, request, pk=None):
+        """删除自定义指标"""
+        try:
+            metric_id = request.data.get('metric_id')
+            evaluator = PromptEvaluator()
+            evaluator.delete_custom_metric(metric_id)
+            return Response({'message': '删除成功'})
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
     

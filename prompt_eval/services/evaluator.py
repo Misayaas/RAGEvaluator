@@ -7,6 +7,7 @@ from langchain.evaluation import load_evaluator, EvaluatorType
 from langchain.evaluation.criteria import Criteria
 
 from eval_master import settings
+from ..models.custom_metric import CustomMetric
 from ..models.evaluation import PromptEvaluation, EvaluationMetric
 from ..models.task import PromptTask
 from django.core.exceptions import ValidationError
@@ -108,12 +109,47 @@ class PromptEvaluator:
         #     "helpfulness": load_evaluator(EvaluatorType.CRITERIA, criteria=Criteria.HELPFULNESS, llm=llm)
         # }
 
-
     """创建新的评估任务"""
     def create_task(self, name):
         return PromptTask.objects.create(
             name=name
         )
+
+
+    """创建任务的自定义评估指标"""
+    def create_custom_metric(self, task_id, name, description):
+        try:
+            task = PromptTask.objects.get(id=task_id)
+            metric = CustomMetric.objects.create(
+                task=task,
+                name=name,
+                description=description
+            )
+            return metric
+        except PromptTask.DoesNotExist:
+            raise ValidationError(f"未找到ID为{task_id}的任务")
+        except Exception as e:
+            raise ValidationError(f"创建自定义指标失败: {str(e)}")
+
+
+    """获取任务的所有自定义评估指标"""
+    def get_task_custom_metrics(self, task_id):
+        try:
+            task = PromptTask.objects.get(id=task_id)
+            return task.custom_metrics.all()
+        except PromptTask.DoesNotExist:
+            raise ValidationError(f"未找到ID为{task_id}的任务")
+
+
+    """删除任务的自定义评估指标"""
+    def delete_custom_metric(self, metric_id):
+        try:
+            metric = CustomMetric.objects.get(id=metric_id)
+            metric.delete()
+            return True
+        except CustomMetric.DoesNotExist:
+            raise ValidationError(f"未找到ID为{metric_id}的指标")
+
 
     """创建新的评估并获取大模型响应"""
     def create_and_evaluate(self, task_id, prompt_text):

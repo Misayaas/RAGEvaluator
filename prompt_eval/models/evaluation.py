@@ -57,6 +57,12 @@ class PromptEvaluation(models.Model):
         self.save()
         return self
 
+    def get_custom_metric_scores(self):
+        """获取该评估的所有自定义指标分数"""
+        return self.detailed_metrics.filter(
+            metric_name__in=self.task.custom_metrics.values_list('name', flat=True)
+        ).values('metric_name', 'metric_value')
+
 class EvaluationMetric(models.Model):
     evaluation = models.ForeignKey(PromptEvaluation, on_delete=models.CASCADE, related_name='detailed_metrics')
     metric_name = models.CharField(max_length=100, verbose_name="指标名称")
