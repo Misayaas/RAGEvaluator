@@ -325,10 +325,21 @@ class PromptEvaluator:
     def _save_detailed_metrics(self, evaluation, metrics):
         """保存详细评估指标"""
         for name, value in metrics.items():
+            metric_details = None
+            if name not in ['faithfulness', 'relevance', 'coherence', 'helpfulness']:
+                try:
+                    aspect_metric = AspectMetric.objects.get(name=name, task=evaluation.task)
+                    metric_details = aspect_metric.description
+                except AspectMetric.DoesNotExist:
+                    pass
+            else:
+                metric_details = "默认指标: " + name
+
             EvaluationMetric.objects.create(
                 evaluation=evaluation,
                 metric_name=name,
-                metric_value=value
+                metric_value=value,
+                metric_details=metric_details
             )
 
 
@@ -362,10 +373,9 @@ class PromptEvaluator:
 
             for evaluation in task.evaluations.all():
                 evaluation.detailed_metrics.all().delete()
+                evaluation.delete()
 
-            task.evaluations.all().delete()
-
-            task.custom_metrics.all().delete()
+            task.aspect_metrics.all().delete()
 
             task.delete()
             return True

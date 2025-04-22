@@ -26,11 +26,12 @@ class TestPromptEvaluationViewSet(APITestCase):
         mock_llm = MagicMock(spec=Runnable)
         mock_chat.return_value = mock_llm
         
-        url = reverse('evaluations-create-task')
+        url = reverse('prompt_eval:evaluations-create-task')
         data = {
             'name': '新测试任务',
         }
         response = self.client.post(url, data, format='json')
+        print(response)
         self.assertEqual(response.status_code, 200)
         self.assertIn('task_id', response.data)
 
@@ -39,7 +40,7 @@ class TestPromptEvaluationViewSet(APITestCase):
         # 创建模拟的 Runnable 对象
         mock_llm = MagicMock(spec=Runnable)
         mock_chat.return_value = mock_llm
-        
-        url = reverse('evaluations-task-evaluations', kwargs={'pk': self.task.id}) 
-        response = self.client.get(url)
+
+        url = reverse('prompt_eval:evaluations-aspect-metrics')
+        response = self.client.get(url, {'task_id': self.task.id})  # 使用查询参数
         self.assertEqual(response.status_code, 200)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models.evaluation import PromptEvaluation, EvaluationMetric
+from .models.task import PromptTask
 from .models.template import PromptTemplate
 from .models.evaluation import AspectMetric
 
@@ -7,6 +8,11 @@ class PromptTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PromptTemplate
         fields = '__all__'
+
+class PromptTaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PromptTask
+        fields = ['id', 'name', 'created_at', 'updated_at']
 
 class EvaluationMetricSerializer(serializers.ModelSerializer):
     class Meta:
