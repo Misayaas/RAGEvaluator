@@ -139,10 +139,3 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         
         serializer = RAGEvaluationSerializer(evaluation)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
-evaleval
-    @action(detail=True, methods=['post'])
-    def calculate_metrics(self, request, pk=None):
-        # 计算评估指标的逻辑
-        # 根据 pk 获取对应的评估任务，计算指标并存储
-        return Response({'message': 'Metrics calculated and stored successfully'}, status=status.HTTP_200_OK)
