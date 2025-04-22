@@ -63,6 +63,20 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @action(detail=True, methods=['post'])
+    def edit_task(self, request, pk):
+        try:
+            task = RAGTask.objects.get(pk=pk)
+        except RAGTask.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = RAGTaskSerializer(task, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
     @action(detail=False, methods=['post'])
     def add_eval(self, request):
         try:
@@ -88,6 +102,28 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+    @action(detail=True, methods=['delete'])
+    def delete_eval(self, request, pk):
+        try:
+        # 根据评估任务的 ID 从数据库中获取要删除的评估任务
+            evaluation = RAGEvaluation.objects.get(pk=pk)
+            evaluation.delete()
+            return Response({"deleted"}, status=status.HTTP_200_OK)
+        except RAGEvaluation.DoesNotExist:
+            return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['delete'])
+    def delete_task(self, request, pk):
+        try:
+        # 根据评估任务的 ID 从数据库中获取要删除的评估任务
+            task = RAGTask.objects.get(pk=pk)
+            task.delete()
+            return Response({"deleted"}, status=status.HTTP_200_OK)
+        except RAGTask.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
     @action(detail=True, methods=['post'])
