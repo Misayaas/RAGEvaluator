@@ -46,10 +46,12 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     'rest_framework',
     "prompt_eval",
-    "rag_eval"
+    "rag_eval",
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -78,8 +80,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "eval_master.wsgi.application"
 
-
-
+# 允许所有域名跨域访问
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

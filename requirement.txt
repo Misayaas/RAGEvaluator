@@ -10,3 +10,4 @@ pytest
 pytest-django 
 coverage
 dotenv
+django-cors-headers
