@@ -37,3 +37,7 @@ class MetricTestResultSerializer(serializers.Serializer):
     score = serializers.FloatField()
     test_prompt = serializers.CharField()
     test_response = serializers.CharField()
+
+class OptimizedPromptSerializer(serializers.Serializer):
+    optimized_prompt = serializers.CharField()
+    optimization_explanation = serializers.CharField()

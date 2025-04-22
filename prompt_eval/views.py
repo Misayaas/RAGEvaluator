@@ -10,6 +10,8 @@ from .serializers import (
     AspectMetricSerializer,
     EvaluationMetricSerializer
 )
+from .services.optimizer import PromptOptimizer
+
 
 class PromptEvaluationViewSet(viewsets.ModelViewSet):
     queryset = PromptEvaluation.objects.all()
@@ -83,5 +85,25 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
             evaluator = PromptEvaluator()
             evaluator.delete_aspect_metric(pk)
             return Response({'message': '删除成功'})
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=['post'])
+    def optimize_prompt(self, request, pk=None):
+        """自动优化Prompt"""
+        try:
+            optimizer = PromptOptimizer()
+            result = optimizer.auto_optimize_prompt(pk)
+            return Response(result)
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
+    @action(detail=True, methods=['post'])
+    def optimize_suggest(self, request, pk=None):
+        """获取优化建议"""
+        try:
+            optimizer = PromptOptimizer()
+            suggestions = optimizer.get_optimization_suggestions(pk)
+            return Response({'suggestions': suggestions})
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)

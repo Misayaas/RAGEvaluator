@@ -6,9 +6,8 @@ from .models.evaluation import AspectMetric
 
 @admin.register(PromptTemplate)
 class PromptTemplateAdmin(admin.ModelAdmin):
-    list_display = ('name', 'version', 'template_type', 'status', 'created_at', 'usage_count')
-    list_filter = ('template_type', 'status', 'created_at')
-    search_fields = ('name', 'description', 'content')
+    list_display = ('name',)
+    search_fields = ('name', 'content')
 
 @admin.register(PromptEvaluation)
 class PromptEvaluationAdmin(admin.ModelAdmin):
