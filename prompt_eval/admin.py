@@ -3,11 +3,16 @@ from .models.evaluation import PromptEvaluation, EvaluationMetric
 from .models.template import PromptTemplate
 from .models.evaluation import AspectMetric
 
-
 @admin.register(PromptTemplate)
 class PromptTemplateAdmin(admin.ModelAdmin):
     list_display = ('name',)
     search_fields = ('name', 'content')
+
+@admin.register(PromptTask)
+class PromptTaskAdmin(admin.ModelAdmin):
+    list_display = ('name', 'created_at', 'updated_at')
+    search_fields = ('name',)
+    list_filter = ('created_at', 'updated_at')
 
 @admin.register(PromptEvaluation)
 class PromptEvaluationAdmin(admin.ModelAdmin):
@@ -38,6 +43,7 @@ class EvaluationMetricAdmin(admin.ModelAdmin):
     list_display = ('evaluation', 'metric_name', 'metric_value')
     list_filter = ('metric_name', 'evaluation')
     search_fields = ('metric_name',)
+
 
 @admin.register(AspectMetric)
 class AspectMetricAdmin(admin.ModelAdmin):
