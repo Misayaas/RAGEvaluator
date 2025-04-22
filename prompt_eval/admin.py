@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models.evaluation import PromptEvaluation, EvaluationMetric
+from .models.task import PromptTask
 from .models.template import PromptTemplate
 from .models.evaluation import AspectMetric
 
