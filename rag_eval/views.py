@@ -4,9 +4,10 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models.evaluation import RAGEvaluation, EvaluationResult
+from .models.task import RAGTask
 from .services.evaluator import evaluate_rag
 from datetime import datetime
-from .serializers import RAGEvaluationSerializer
+from .serializers import RAGEvaluationSerializer, RAGTaskSerializer
 
 class RAGEvaluationViewSet(viewsets.GenericViewSet):
     queryset = RAGEvaluation.objects.all()
@@ -14,15 +15,22 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
     
 
     @action(detail=False, methods=['get'])
-    def all(self, request):
+    def all_eval(self, request):
         evaluations = RAGEvaluation.objects.all()
         serializer = RAGEvaluationSerializer(evaluations, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 
+    @action(detail=False, methods=['get'])
+    def all_task(self, request):
+        evaluations = RAGTask.objects.all()
+        serializer = RAGTaskSerializer(evaluations, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     @action(detail=True, methods=['get'])
-    def get(self, request, pk):
+    def get_eval(self, request, pk):
         try:
             evaluation = RAGEvaluation.objects.get(pk=pk)
             serializer = RAGEvaluationSerializer(evaluation)
@@ -31,9 +39,19 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
+    @action(detail=True, methods=['get'])
+    def get_task(self, request, pk):
+        try:
+            evaluation = RAGTask.objects.get(pk=pk)
+            serializer = RAGTaskSerializer(evaluation)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except RAGEvaluation.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
 
     @action(detail=True, methods=['post'])
-    def edit(self, request, pk):
+    def edit_eval(self, request, pk):
         try:
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
@@ -45,19 +63,31 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
+    @action(detail=False, methods=['post'])
+    def add_eval(self, request):
+        try:
+            data = request.data.copy()  # 复制请求数据
+            data['created_at'] = datetime.now().isoformat()
+            serializer = RAGEvaluationSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except RAGEvaluation.DoesNotExist:
+            return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
+    
 
     @action(detail=False, methods=['post'])
-    def create_evaluation(self, request):
+    def create_task(self, request):
         # 设置为当前日期
         data = request.data.copy()  # 复制请求数据
         data['created_at'] = datetime.now().isoformat()
-        serializer = RAGEvaluationSerializer(data=data)
+        data['updated_at'] = datetime.now().isoformat()
+        serializer = RAGTaskSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
 
 
     @action(detail=True, methods=['post'])
@@ -110,7 +140,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         serializer = RAGEvaluationSerializer(evaluation)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
+evaleval
     @action(detail=True, methods=['post'])
     def calculate_metrics(self, request, pk=None):
         # 计算评估指标的逻辑

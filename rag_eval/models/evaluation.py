@@ -4,8 +4,10 @@ from django.db import models
 # rag评估模型
 class RAGEvaluation(models.Model):
     # 基本信息
-    name = models.TextField(verbose_name="评估任务名称")
-    description = models.TextField(verbose_name="任务描述")
+    name = models.TextField(verbose_name="评估名称")
+
+    # 关联任务
+    task = models.ForeignKey("RAGTask", on_delete=models.CASCADE, related_name='evaluations')
     
     # 评估指标
     faithfulness_score = models.FloatField(verbose_name="答案忠实度", default=0.0)
