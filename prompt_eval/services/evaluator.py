@@ -1,16 +1,14 @@
 from langchain_core.prompts import PromptTemplate
 from ragas import evaluate
 from langchain_core.messages import HumanMessage
-from ragas.metrics import faithfulness
+from ragas.metrics import faithfulness, AspectCritic
 from datasets import Dataset  
 from langchain.evaluation import load_evaluator, EvaluatorType
 from langchain.evaluation.criteria import Criteria
 
 from eval_master import settings
-from ..models.custom_metric import CustomMetric
-from ..models.evaluation import PromptEvaluation, EvaluationMetric
+from ..models.evaluation import AspectMetric, PromptEvaluation, EvaluationMetric
 from ..models.task import PromptTask
-from .CustomRagasMetric import CustomRagasMetric
 from django.core.exceptions import ValidationError
 from langchain_openai import ChatOpenAI
 from ragas.llms import LangchainLLMWrapper
@@ -118,10 +116,10 @@ class PromptEvaluator:
 
 
     """创建任务的自定义评估指标"""
-    def create_custom_metric(self, task_id, name, description):
+    def create_aspect_metric(self, task_id, name, description):
         try:
             task = PromptTask.objects.get(id=task_id)
-            metric = CustomMetric.objects.create(
+            metric = AspectMetric.objects.create(
                 task=task,
                 name=name,
                 description=description
@@ -134,21 +132,21 @@ class PromptEvaluator:
 
 
     """获取任务的所有自定义评估指标"""
-    def get_task_custom_metrics(self, task_id):
+    def get_task_aspect_metrics(self, task_id):
         try:
             task = PromptTask.objects.get(id=task_id)
-            return task.custom_metrics.all()
+            return task.aspect_metrics.all()
         except PromptTask.DoesNotExist:
             raise ValidationError(f"未找到ID为{task_id}的任务")
 
 
     """删除任务的自定义评估指标"""
-    def delete_custom_metric(self, metric_id):
+    def delete_aspect_metric(self, metric_id):
         try:
-            metric = CustomMetric.objects.get(id=metric_id)
+            metric = AspectMetric.objects.get(id=metric_id)
             metric.delete()
             return True
-        except CustomMetric.DoesNotExist:
+        except AspectMetric.DoesNotExist:
             raise ValidationError(f"未找到ID为{metric_id}的指标")
 
 
@@ -188,7 +186,9 @@ class PromptEvaluator:
         except Exception as e:
             raise ValidationError(f"评估过程出错: {str(e)}")
 
-    async def evaluate_prompt(self, evaluation, selected_metrics=None):
+
+    """评估给定的评估记录"""
+    def evaluate_prompt(self, evaluation, selected_metrics=None):
         if evaluation.status != 'responded':
             raise ValidationError("只能评估已有响应的记录")
     
@@ -201,22 +201,20 @@ class PromptEvaluator:
     
             # 加载选中的自定义指标
             if selected_metrics:
-                task_metrics = CustomMetric.objects.filter(
+                task_metrics = AspectMetric.objects.filter(
                     task=evaluation.task,
                     id__in=selected_metrics
                 )
-                print(f"加载自定义指标: {[m.name for m in task_metrics]}")
-    
-                # 添加自定义指标
+                
+                # 添加 AspectCritic 指标
                 for metric in task_metrics:
-                    custom_metric = CustomRagasMetric(
+                    aspect_critic = AspectCritic(
                         name=metric.name,
-                        description=metric.description,
+                        definition=metric.description,
                         llm=self.custom_llm
                     )
-                    self.metrics.append(custom_metric)
-                    print(f"添加指标: {metric.name}")
-    
+                    self.metrics.append(aspect_critic)
+
             # 计算 Ragas 评估指标
             ragas_metrics = self._calculate_ragas_metrics(
                 evaluation.prompt_text,
@@ -240,13 +238,6 @@ class PromptEvaluator:
             evaluation.helpfulness_score = metrics.get('helpfulness', 0.0)
             evaluation.status = 'completed'
             evaluation.save()
-
-            # 保存自定义指标评分
-            custom_metrics_scores = {
-                name: score for name, score in metrics.items() 
-                if name not in ['faithfulness', 'relevance', 'coherence', 'helpfulness']
-            }
-            self.save_metric_scores(evaluation, custom_metrics_scores)
             
             # 保存详细指标
             self._save_detailed_metrics(evaluation, metrics)
@@ -273,6 +264,9 @@ class PromptEvaluator:
                     contexts = eval(context) if context else [""]
                 except:
                     contexts = [context] if context else [""]
+
+            contexts = [str(ctx) if ctx else "" for ctx in contexts]
+            
             
             # 构建数据集
             data = {
@@ -280,17 +274,25 @@ class PromptEvaluator:
                 "answer": [response],
                 "contexts": [contexts]
             }
-
             dataset = Dataset.from_dict(data)
+
             # 使用 Ragas 评估
             scores = evaluate(
                 dataset=dataset,
                 metrics=self.metrics
             )
             
-            return {
-                'faithfulness': float(scores['faithfulness'][0] if isinstance(scores['faithfulness'], list) else scores['faithfulness'])
-            }
+            metrics_result = {}
+            for metric in self.metrics:
+                metric_name = metric.name
+                try:
+                    score = scores[metric_name][0]
+                    metrics_result[metric_name] = float(score)
+                except Exception as e:
+                    print(f"处理指标 {metric_name} 时出错: {str(e)}")
+                    metrics_result[metric_name] = 0.0
+
+            return metrics_result
             
         except Exception as e:
             print("数据处理错误:", str(e))
@@ -304,7 +306,6 @@ class PromptEvaluator:
                     prediction=response,
                     input=prompt
                 )
-                print(result)
                 if isinstance(result, dict):
                     if result.get('score') is not None:
                         metrics[name] = float(result['score'])
@@ -332,19 +333,16 @@ class PromptEvaluator:
 
 
     """保存指标评分"""
-    def save_metric_scores(self, evaluation: PromptEvaluation, scores):
-        from ..models.custom_metric import MetricScore, CustomMetric
-
+    def save_aspect_critic(self, evaluation: PromptEvaluation, scores):
         for metric_name, score in scores.items():
             try:
-                metric = CustomMetric.objects.get(task=evaluation.task, name=metric_name)
-                MetricScore.objects.update_or_create(
+                EvaluationMetric.objects.update_or_create(
                     evaluation=evaluation,
-                    metric=metric,
-                    defaults={'score': score}
+                    metric_name=metric_name,
+                    defaults={'metric_value': score}
                 )
-            except CustomMetric.DoesNotExist:
-                print(f"找不到指标: {metric_name}")
+            except Exception as e:
+                print(f"保存指标 {metric_name} 评分失败: {str(e)}")
 
 
     """获取任务的所有评估记录"""

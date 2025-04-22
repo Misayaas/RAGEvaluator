@@ -2,13 +2,12 @@ from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models.evaluation import PromptEvaluation
-from .serializers import PromptEvaluationSerializer
 from .services.evaluator import PromptEvaluator
 from django.core.exceptions import ValidationError
 
 from .serializers import (
     PromptEvaluationSerializer, 
-    CustomMetricSerializer,
+    AspectMetricSerializer,
     EvaluationMetricSerializer
 )
 
@@ -51,40 +50,38 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         return Response({'message': '任务删除成功'})
 
     @action(detail=True, methods=['post'])
-    def create_custom_metric(self, request, pk=None):
-        """创建自定义指标"""
+    def create_aspect_metric(self, request, pk=None):
+        """创建评估指标"""
         try:
             name = request.data.get('name')
             description = request.data.get('description')
             
             evaluator = PromptEvaluator()
-            metric = evaluator.create_custom_metric(pk, name, description)
+            metric = evaluator.create_aspect_metric(pk, name, description)
             
-            serializer = CustomMetricSerializer(metric)
+            serializer = AspectMetricSerializer(metric)
             return Response(serializer.data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
 
     @action(detail=True, methods=['get'])
-    def custom_metrics(self, request, pk=None):
-        """获取任务的所有自定义指标"""
+    def aspect_metrics(self, request, pk=None):
+        """获取任务的所有评估指标"""
         try:
             evaluator = PromptEvaluator()
-            metrics = evaluator.get_task_custom_metrics(pk)
+            metrics = evaluator.get_task_aspect_metrics(pk)
             
-            serializer = CustomMetricSerializer(metrics, many=True)
+            serializer = AspectMetricSerializer(metrics, many=True)
             return Response(serializer.data)
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
 
     @action(detail=True, methods=['delete'])
-    def delete_custom_metric(self, request, pk=None):
-        """删除自定义指标"""
+    def delete_aspect_metric(self, request, pk=None):
+        """删除评估指标"""
         try:
             evaluator = PromptEvaluator()
-            evaluator.delete_custom_metric(pk)
+            evaluator.delete_aspect_metric(pk)
             return Response({'message': '删除成功'})
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
-
-    

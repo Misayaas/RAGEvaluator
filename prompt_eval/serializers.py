@@ -1,8 +1,7 @@
 from rest_framework import serializers
 from .models.evaluation import PromptEvaluation, EvaluationMetric
 from .models.template import PromptTemplate
-from .models.custom_metric import CustomMetric, MetricScore
-
+from .models.evaluation import AspectMetric
 
 class PromptTemplateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -14,22 +13,13 @@ class EvaluationMetricSerializer(serializers.ModelSerializer):
         model = EvaluationMetric
         fields = '__all__'
 
-class CustomMetricSerializer(serializers.ModelSerializer):
+class AspectMetricSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CustomMetric
+        model = AspectMetric
         fields = ['id', 'name', 'description', 'created_at']
-
-
-class MetricScoreSerializer(serializers.ModelSerializer):
-    metric_name = serializers.CharField(source='metric.name', read_only=True)
-
-    class Meta:
-        model = MetricScore
-        fields = ['metric_name', 'score', 'created_at']
 
 class PromptEvaluationSerializer(serializers.ModelSerializer):
     detailed_metrics = EvaluationMetricSerializer(many=True, read_only=True)
-    metric_scores = MetricScoreSerializer(many=True, read_only=True)
     
     class Meta:
         model = PromptEvaluation
@@ -38,10 +28,12 @@ class PromptEvaluationSerializer(serializers.ModelSerializer):
             'model_name', 'status', 'version', 'created_at',
             'faithfulness_score', 'relevance_score',
             'coherence_score', 'helpfulness_score',
-            'detailed_metrics' ,
-            'metric_scores'
+            'detailed_metrics'
         ]
-        custom_metrics = serializers.SerializerMethodField()
 
-    def get_custom_metrics(self, obj):
-        return obj.get_custom_metric_scores()
+class MetricTestResultSerializer(serializers.Serializer):
+    metric_id = serializers.IntegerField()
+    metric_name = serializers.CharField()
+    score = serializers.FloatField()
+    test_prompt = serializers.CharField()
+    test_response = serializers.CharField()
