@@ -27,6 +27,7 @@ class PromptOptimizer:
 1. 指出每个低分指标的具体问题
 2. 提供明确的改进方向
 3. 不要直接生成优化后的Prompt
+4. 就算指标满分你也尽量提出可以再进一步的改进建议
 
 请按以下格式返回结果：
 优化建议:
@@ -50,6 +51,7 @@ class PromptOptimizer:
 4. 给Prompt对应的引导，告诉模型你期望它做什么或者不做什么
 5. 可以提供相应的简单示例
 6. 告知模型自己的角色
+7. Prompt尽量使用这样的结构：立角色 + 述问题 + 定目标 + 补要求
 
 请按以下格式返回结果：
 优化后的Prompt: [优化后的Prompt内容]
@@ -94,10 +96,13 @@ class PromptOptimizer:
                 prompt=evaluation.prompt_text,
                 metrics=metrics_str
             ))
-            
+            contentStr = result.content.replace("：", ":")
+    
             # 解析优化后的prompt
-            optimized_prompt = result.content.split("优化后的Prompt: ")[1].split("优化解释: ")[0].strip()
-            optimization_explanation = result.content.split("优化解释: ")[1].strip()
+            test = contentStr.split("优化后的Prompt:")
+
+            optimized_prompt = contentStr.split("优化后的Prompt:")[1].split("优化解释:")[0].strip()
+            optimization_explanation = contentStr.split("优化解释:")[1].strip()
             return {
                 "optimized_prompt": optimized_prompt,
                 "optimization_explanation": optimization_explanation
