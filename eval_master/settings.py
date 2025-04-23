@@ -89,11 +89,11 @@ CORS_ORIGIN_ALLOW_ALL = True
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
-        "NAME": "rag_evaluator",
-        "USER": "remote_user",
-        "PASSWORD": "123456",
-        "HOST": "172.29.4.151",
-        "PORT": "3306"
+        "NAME": os.getenv("MYSQL_DATABASE"),
+        "USER": os.getenv("MYSQL_USER"),
+        "PASSWORD": os.getenv("MYSQL_PASSWORD"),
+        "HOST": os.getenv("MYSQL_HOST"),
+        "PORT": os.getenv("MYSQL_PORT")
     }
 }
 

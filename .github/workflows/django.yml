@@ -27,8 +27,8 @@ jobs:
         HUNYUAN_SECRET_KEY: ${{ secrets.HUNYUAN_SECRET_KEY }}
         HUNYUAN_API_BASE: ${{ secrets.HUNYUAN_API_BASE }}
       run: |
-        echo "HUNYUAN_SECRET_KEY=$HUNYUAN_SECRET_KEY" > env
-        echo "HUNYUAN_API_BASE=$HUNYUAN_API_BASE" >> env
+        echo "HUNYUAN_SECRET_KEY=$HUNYUAN_SECRET_KEY" > .env
+        echo "HUNYUAN_API_BASE=$HUNYUAN_API_BASE" >> .env
 
     - name: Install Dependencies
       run: |
