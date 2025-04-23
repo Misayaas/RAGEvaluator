@@ -29,9 +29,10 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-    @action(detail=True, methods=['get'])
-    def get_eval(self, request, pk):
+    @action(detail=False, methods=['get'])
+    def get_eval(self, request):
         try:
+            pk = request.GET.get('id')
             evaluation = RAGEvaluation.objects.get(pk=pk)
             serializer = RAGEvaluationSerializer(evaluation)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -39,9 +40,10 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-    @action(detail=True, methods=['get'])
-    def get_task(self, request, pk):
+    @action(detail=False, methods=['get'])
+    def get_task(self, request):
         try:
+            pk = request.GET.get('id')
             evaluation = RAGTask.objects.get(pk=pk)
             serializer = RAGTaskSerializer(evaluation)
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -50,27 +52,29 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
 
 
 
-    @action(detail=True, methods=['post'])
-    def edit_eval(self, request, pk):
+    @action(detail=False, methods=['post'])
+    def edit_eval(self, request):
         try:
+            pk = request.data.get('id')
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        serializer = RAGEvaluationSerializer(evaluation, data=request.data)
+        serializer = RAGEvaluationSerializer(instance=evaluation, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'])
-    def edit_task(self, request, pk):
+    @action(detail=False, methods=['post'])
+    def edit_task(self, request):
         try:
+            pk = request.data.get('id')
             task = RAGTask.objects.get(pk=pk)
         except RAGTask.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        serializer = RAGTaskSerializer(task, data=request.data)
+        serializer = RAGTaskSerializer(instance=task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
@@ -81,6 +85,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
     def add_eval(self, request):
         try:
             data = request.data.copy()  # 复制请求数据
+            data['task'] = data['task_id']
             data['created_at'] = datetime.now().isoformat()
             serializer = RAGEvaluationSerializer(data=data)
             if serializer.is_valid():
@@ -104,20 +109,24 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-    @action(detail=True, methods=['delete'])
-    def delete_eval(self, request, pk):
+    @action(detail=False, methods=['delete'])
+    def delete_eval(self, request):
         try:
         # 根据评估任务的 ID 从数据库中获取要删除的评估任务
+            pk = request.query_params.get('id')
             evaluation = RAGEvaluation.objects.get(pk=pk)
             evaluation.delete()
             return Response({"deleted"}, status=status.HTTP_200_OK)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['delete'])
-    def delete_task(self, request, pk):
+
+
+    @action(detail=False, methods=['delete'])
+    def delete_task(self, request):
         try:
         # 根据评估任务的 ID 从数据库中获取要删除的评估任务
+            pk = request.query_params.get('id')
             task = RAGTask.objects.get(pk=pk)
             task.delete()
             return Response({"deleted"}, status=status.HTTP_200_OK)
@@ -126,9 +135,10 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
 
 
 
-    @action(detail=True, methods=['post'])
-    def upload_evaluation_file(self, request, pk=None):
+    @action(detail=False, methods=['post'])
+    def upload_evaluation_file(self, request):
         try:
+            pk = request.data.get('id')
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -144,11 +154,12 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
     
 
 
-    @action(detail=True, methods=['post'])
-    def evaluate(self, request, pk=None):
+    @action(detail=False, methods=['get'])
+    def evaluate(self, request):
         # 开启一轮评估的逻辑
         # 根据 pk 获取对应的评估任务，进行评估处理
         try:
+            pk = request.GET.get('id')
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
