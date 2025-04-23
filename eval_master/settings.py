@@ -32,7 +32,7 @@ SECRET_KEY = "django-insecure-gjt4swuibyu@(@c7%&-m#kkl2n2$a61lub3x30i!^(=s86b^^h
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -88,8 +88,12 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "rag_evaluator",
+        "USER": "remote_user",
+        "PASSWORD": "123456",
+        "HOST": "172.29.4.151",
+        "PORT": "3306"
     }
 }
 

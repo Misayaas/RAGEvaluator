@@ -28,3 +28,4 @@ evaluated/2025/04/15
 rag_eval/migrations
 rag_eval/services/__pycache__
 evaluated
+venv/
