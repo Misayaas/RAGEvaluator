@@ -115,6 +115,11 @@ class PromptEvaluator:
         )
 
 
+    """获取所有评估任务"""
+    def get_all_tasks(self):
+        return PromptTask.objects.all()
+
+
     """创建任务的自定义评估指标"""
     def create_aspect_metric(self, task_id, name, description):
         try:

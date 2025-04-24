@@ -26,6 +26,14 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         )
         return Response({'task_id': task.id})
 
+
+    @action(detail=False, methods=['get'])
+    def list_tasks(self, request):
+        """获取所有任务"""
+        evaluator = PromptEvaluator()
+        tasks = evaluator.get_all_tasks()
+        return Response(self.get_serializer(tasks, many=True).data)
+
     @action(detail=False, methods=['post'])
     def create_and_evaluate(self, request):
         """创建新的评估并执行评估"""
