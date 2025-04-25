@@ -138,7 +138,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['post'])
     def upload_evaluation_file(self, request):
         try:
-            pk = request.data.get('id')
+            pk = int(request.data.get('id'))
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
