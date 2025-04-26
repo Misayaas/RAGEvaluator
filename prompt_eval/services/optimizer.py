@@ -9,7 +9,7 @@ class PromptOptimizer:
     def __init__(self):
         self.llm = ChatOpenAI(
             model="hunyuan-lite",
-            temperature=0.6,
+            temperature=0.8,
             base_url=settings.OPENAI_API_BASE,
             api_key=settings.OPENAI_API_KEY
         )
