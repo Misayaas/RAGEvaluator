@@ -172,6 +172,8 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         
         # 填充 faithfulness_score 等数据
         evaluation.faithfulness_score = evaluation_result.get('faithfulness_score', 0.0)
+        evaluation.context_recall_score = evaluation_result.get('context_recall_score', 0.0)
+        evaluation.context_precision_score = evaluation_result.get('context_precision_score', 0.0)
         
         # 保存评估任务对象
         evaluation.save()

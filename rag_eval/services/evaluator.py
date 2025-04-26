@@ -1,5 +1,5 @@
 ## 实现RAG系统的评估逻辑(包括检索和生成两部分)
-from ragas import evaluate
+from ragas import evaluate, RunConfig
 from ragas.metrics import faithfulness, answer_relevancy, context_precision, context_recall
 from langchain_openai import OpenAIEmbeddings
 from datasets import Dataset
@@ -71,11 +71,19 @@ def evaluate_rag(file_path : str) :
     result = evaluate(
     dataset = dataset, 
     metrics=[
-        context_precision,
         context_recall,
+        context_precision,
         faithfulness,
         # answer_relevancy,
-    ],
+    ], run_config=RunConfig(max_workers=5)
     )
 
-    return {"faithfulness_score": np.mean(filterNAN(result['faithfulness']))}
+    result = {
+            "faithfulness_score": np.mean(filterNAN(result['faithfulness'])),
+            'context_precision_score':np.mean(filterNAN(result['context_precision'])),
+            "context_recall_score":np.mean(filterNAN(result['context_recall']))
+            }
+
+    print(result)
+
+    return result
