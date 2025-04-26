@@ -1,10 +1,10 @@
-name: Django CI
+name: Django CI_sqlite
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "sqlite" ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ "sqlite" ]
 
 jobs:
   service-validation:
