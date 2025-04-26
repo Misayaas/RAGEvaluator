@@ -8,7 +8,8 @@ from django.core.exceptions import ValidationError
 from .serializers import (
     PromptEvaluationSerializer, 
     AspectMetricSerializer,
-    EvaluationMetricSerializer
+    EvaluationMetricSerializer,
+    PromptTaskSerializer
 )
 from .services.optimizer import PromptOptimizer
 
@@ -32,7 +33,8 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         """获取所有任务"""
         evaluator = PromptEvaluator()
         tasks = evaluator.get_all_tasks()
-        return Response(self.get_serializer(tasks, many=True).data)
+        serializer = PromptTaskSerializer(tasks, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=['post'])
     def create_and_evaluate(self, request):

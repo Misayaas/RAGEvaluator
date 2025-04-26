@@ -90,7 +90,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
             serializer = RAGEvaluationSerializer(data=data)
             if serializer.is_valid():
                 serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.data, status=status.HTTP_200_OK)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
@@ -105,7 +105,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
         serializer = RAGTaskSerializer(data=data)
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -138,7 +138,7 @@ class RAGEvaluationViewSet(viewsets.GenericViewSet):
     @action(detail=False, methods=['post'])
     def upload_evaluation_file(self, request):
         try:
-            pk = request.data.get('id')
+            pk = int(request.data.get('id'))
             evaluation = RAGEvaluation.objects.get(pk=pk)
         except RAGEvaluation.DoesNotExist:
             return Response({'error': 'Evaluation not found'}, status=status.HTTP_404_NOT_FOUND)
