@@ -386,3 +386,14 @@ class PromptEvaluator:
             return True
         except PromptTask.DoesNotExist:
             raise ValidationError(f"未找到ID为{task_id}的任务")
+
+
+    """删除指定评估记录"""
+    def delete_evaluation(self, evaluation_id):
+        try:
+            evaluation = PromptEvaluation.objects.get(id=evaluation_id)
+            evaluation.detailed_metrics.all().delete()
+            evaluation.delete()
+            return True
+        except PromptEvaluation.DoesNotExist:
+            raise ValidationError(f"未找到ID为{evaluation_id}的评估记录")

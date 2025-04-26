@@ -96,6 +96,16 @@ class PromptEvaluationViewSet(viewsets.ModelViewSet):
         except ValidationError as e:
             return Response({'error': str(e)}, status=400)
 
+    @action(detail=False, methods=['delete'])
+    def delete_evaluation(self, request):
+        """删除指定评估记录"""
+        try:
+            evaluator = PromptEvaluator()
+            evaluator.delete_evaluation(evaluation_id=request.query_params.get('evaluation_id'))
+            return Response({'message': '评估记录删除成功'})
+        except ValidationError as e:
+            return Response({'error': str(e)}, status=400)
+
     @action(detail=False, methods=['post'])
     def optimize_prompt(self, request):
         """自动优化Prompt"""
