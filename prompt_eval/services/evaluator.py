@@ -13,6 +13,8 @@ from django.core.exceptions import ValidationError
 from langchain_openai import ChatOpenAI
 from ragas.llms import LangchainLLMWrapper
 
+import re
+
 class PromptEvaluator:
     """初始化"""
     def __init__(self):
@@ -313,15 +315,34 @@ class PromptEvaluator:
                 )
                 if isinstance(result, dict):
                     if result.get('score') is not None:
-                        metrics[name] = float(result['score'])
+                        if isinstance(result['score'], str):
+                            match = re.search(r'\d+\.?\d*', result['score'])
+                            score = float(match.group()) if match else 0.0
+                        else:
+                            score = result['score']
+                        score = result['score']
                     elif result.get('value') is not None:
-                        metrics[name] = float(result['value'])
+                        if isinstance(result['value'], str):
+                            match = re.search(r'\d+\.?\d*', result['value'])
+                            score = float(match.group()) if match else 0.0
+                        else:
+                            score = result['value']
                     elif result.get('reasoning') is not None:
-                        metrics[name] = float(result['reasoning'])
+                        if isinstance(result['reasoning'], str):
+                            match = re.search(r'\d+\.?\d*', result['reasoning'])
+                            score = float(match.group()) if match else 0.0
+                        else:
+                            score = result['reasoning']
                     else:
-                        metrics[name] = 0.0
+                        score = 0.0
                 else:
-                    metrics[name] = float(result) if result is not None else 0.0
+                    if isinstance(result, str):
+                        match = re.search(r'\d+\.?\d*', result)
+                        score = float(match.group()) if match else 0.0
+                    else:
+                        score = result
+
+                metrics[name] = float(score) if score is not None else 0.0
             return metrics
         except Exception as e:
             print(f"LangChain 评估错误: {str(e)}")
