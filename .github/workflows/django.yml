@@ -26,9 +26,20 @@ jobs:
       env:
         HUNYUAN_SECRET_KEY: ${{ secrets.HUNYUAN_SECRET_KEY }}
         HUNYUAN_API_BASE: ${{ secrets.HUNYUAN_API_BASE }}
+        MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+        MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+        MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        MYSQL_USER: ${{ secrets.MYSQL_USER }}
+        MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }} 
       run: |
         echo "HUNYUAN_SECRET_KEY=$HUNYUAN_SECRET_KEY" > .env
         echo "HUNYUAN_API_BASE=$HUNYUAN_API_BASE" >> .env
+        echo "MYSQL_HOST=$MYSQL_HOST" >> .env
+        echo "MYSQL_PORT=$MYSQL_PORT" >> .env
+        echo "MYSQL_DATABASE=$MYSQL_DATABASE" >> .env
+        echo "MYSQL_USER=$MYSQL_USER" >> .env
+        echo "MYSQL_PASSWORD=$MYSQL_PASSWORD" >> .env
+
 
     - name: Install Dependencies
       run: |
